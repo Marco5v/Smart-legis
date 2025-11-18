@@ -1,0 +1,5 @@
+{
+  "name": "SMART LEGIS - Sistema de Votação",
+  "description": "Um sistema web em tempo real para gerenciamento de sessões plenárias e votações em câmaras municipais. Inclui painéis para o operador, vereadores e um telão público.",
+  "requestFramePermissions": []
+}
