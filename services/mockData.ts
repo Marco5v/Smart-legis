@@ -8,7 +8,8 @@ export const MOCK_USERS: UserProfile[] = [
     party: 'PP', 
     photoUrl: 'https://i.pravatar.cc/150?u=vereador-1',
     email: 'irmao.beto@sapv.gov',
-    role: UserRole.VEREADOR,
+    role: UserRole.PRESIDENTE,
+    boardRole: 'Presidente',
   },
   { 
     uid: 'vereador-2', 
@@ -17,6 +18,7 @@ export const MOCK_USERS: UserProfile[] = [
     photoUrl: 'https://i.pravatar.cc/150?u=vereador-2',
     email: 'francis.ginaldo@sapv.gov',
     role: UserRole.VEREADOR,
+    boardRole: 'Vice-Presidente',
   },
   { 
     uid: 'vereador-3', 
@@ -33,7 +35,7 @@ export const MOCK_USERS: UserProfile[] = [
     photoUrl: 'https://i.pravatar.cc/150?u=vereador-4',
     email: 'manoel.posto@sapv.gov',
     role: UserRole.VEREADOR,
-    boardRole: '2º Secretário',
+    boardRole: '1º Secretário',
   },
   { 
     uid: 'vereador-5', 
@@ -50,16 +52,15 @@ export const MOCK_USERS: UserProfile[] = [
     photoUrl: 'https://i.pravatar.cc/150?u=vereador-6',
     email: 'del.mercadinho@sapv.gov',
     role: UserRole.VEREADOR,
-    boardRole: '1º Secretário',
+    boardRole: '2º Secretário',
   },
   { 
     uid: 'vereador-7', 
     name: 'JOÃO OLÍMPIO', 
     party: 'PSB', 
     photoUrl: 'https://i.pravatar.cc/150?u=vereador-7',
-    email: 'presidente@sapv.gov',
-    role: UserRole.PRESIDENTE,
-    boardRole: 'Presidente',
+    email: 'joao.olimpio@sapv.gov',
+    role: UserRole.VEREADOR,
   },
   { 
     uid: 'vereador-8', 
@@ -84,7 +85,6 @@ export const MOCK_USERS: UserProfile[] = [
     photoUrl: 'https://i.pravatar.cc/150?u=vereador-10',
     email: 'ledo@sapv.gov',
     role: UserRole.VEREADOR,
-    boardRole: 'Vice-Presidente',
   },
   { 
     uid: 'vereador-11', 
