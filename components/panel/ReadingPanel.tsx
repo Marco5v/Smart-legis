@@ -49,9 +49,12 @@ const ReadingPanel: React.FC<{
             
             <div className="text-center my-6 w-full">
                 <p className="text-5xl font-black text-yellow-400 inline-block px-4 pb-2">
+                  {project.title.toUpperCase()}
+                </p>
+                <div className="h-1.5 bg-yellow-400 w-3/4 mx-auto"></div>
+                <p className="text-3xl font-semibold text-white mt-4">
                   AUTOR: {project.author.name.toUpperCase()}
                 </p>
-                 <div className="h-1.5 bg-yellow-400 w-3/4 mx-auto"></div>
             </div>
             
             <div className="grid grid-cols-2 gap-x-16 gap-y-6 text-3xl font-semibold w-full max-w-4xl text-left pl-16">
