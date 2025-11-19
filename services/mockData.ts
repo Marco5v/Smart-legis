@@ -182,6 +182,7 @@ export const MOCK_SESSION_HISTORY: SessionHistory[] = [
         speakerTimerEndTime: null,
         speakerTimerPaused: false,
         speakerHistory: [],
+        defaultSpeakerDuration: 300,
         interruptionRequest: null,
         pointOfOrderRequest: null,
         operationalChat: [],

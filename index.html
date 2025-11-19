@@ -4,49 +4,38 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SMART LEGIS - Sistema de Votação</title>
+    <title>SAPV - Sistema de Apoio ao Plenário</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              'sapv-blue': {
-                'dark': '#0a192f',
-                'light': '#172a46',
-                'highlight': '#64ffda',
-              },
-              'sapv-gray': {
-                'light': '#ccd6f6',
-                'DEFAULT': '#8892b0',
-                'dark': '#495670',
-              }
-            },
-            fontFamily: {
-              'sans': ['Inter', 'sans-serif'],
-              'mono': ['Fira Code', 'monospace'],
+              'sapv-blue-dark': '#0a192f',
+              'sapv-blue-light': '#172a46',
+              'sapv-gray-dark': '#495670',
+              'sapv-gray': '#8892b0',
+              'sapv-gray-light': '#ccd6f6',
+              'sapv-highlight': '#64ffda',
             }
           }
         }
       }
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <script type="importmap">
+    <script type="importmap">
 {
   "imports": {
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
-    "recharts": "https://aistudiocdn.com/recharts@^3.4.1",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.553.0"
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.553.0",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6",
+    "recharts": "https://aistudiocdn.com/recharts@^3.4.1"
   }
 }
 </script>
-</head>
-  <body class="bg-sapv-blue-dark">
+  </head>
+  <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

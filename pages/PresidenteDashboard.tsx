@@ -18,15 +18,20 @@ const PresidenteDashboard: React.FC = () => {
         advanceSpeakerQueue, setSpeakerTimer, legislatureConfig,
         startSession, endSession, calculateResult, restartVoting,
         annulVoting, pauseSpeakerTimer, addSpeakerTime, resolveInterruption, setCurrentProject,
-        resolvePointOfOrder, setPhase, toggleMicrophone,
+        resolvePointOfOrder, setPhase, toggleMicrophone, muteAllMicrophones,
         startSymbolicVoting, resolveSymbolicVote, resolveVerification,
-        councilMembers
+        councilMembers, setDefaultSpeakerDuration
     } = useSession();
     
     const [selectedBlockItems, setSelectedBlockItems] = useState<Set<string>>(new Set());
     const [pautaTab, setPautaTab] = useState<'Expediente' | 'Ordem do Dia'>('Expediente');
     const [feedback, setFeedback] = useState('');
     const [remainingSpeakerTime, setRemainingSpeakerTime] = useState<number | null>(null);
+    const [defaultSpeakerTime, setDefaultSpeakerTime] = useState(session.defaultSpeakerDuration / 60);
+
+    useEffect(() => {
+        setDefaultSpeakerTime(session.defaultSpeakerDuration / 60);
+    }, [session.defaultSpeakerDuration]);
 
     // Countdown timer for speaker
     useEffect(() => {
@@ -170,6 +175,13 @@ const PresidenteDashboard: React.FC = () => {
     };
     // --- End of Pauta Logic ---
 
+    const handleSetDefaultTime = () => {
+        const timeInMinutes = Math.max(0.1, defaultSpeakerTime);
+        const durationInSeconds = timeInMinutes * 60;
+        setDefaultSpeakerDuration(durationInSeconds);
+        showFeedback(`Tempo padrão do orador definido para ${timeInMinutes} minutos.`);
+    };
+
     const handleEndVoting = () => {
         if (!user) return;
         calculateResult(user.name);
@@ -265,6 +277,8 @@ const PresidenteDashboard: React.FC = () => {
     };
         
     const presentMembers = useMemo(() => councilMembers.filter(m => session.presence[m.uid]), [councilMembers, session.presence]);
+    const areAllMicsOff = useMemo(() => presentMembers.every(m => !session.microphoneStatus[m.uid]), [presentMembers, session.microphoneStatus]);
+
 
     return (
         <div className="min-h-screen bg-sapv-blue-dark text-sapv-gray-light p-8">
@@ -346,6 +360,20 @@ const PresidenteDashboard: React.FC = () => {
                     </Card>
                     
                      <Card title="Controle da Tribuna">
+                        <div className="flex items-center gap-3 p-3 bg-sapv-blue-dark rounded-md mb-4 border-b border-sapv-gray-dark">
+                            <label htmlFor="speaker-time" className="text-sm font-semibold whitespace-nowrap">Tempo Padrão (min):</label>
+                            <input
+                                id="speaker-time"
+                                type="number"
+                                value={defaultSpeakerTime}
+                                onChange={(e) => setDefaultSpeakerTime(Number(e.target.value))}
+                                min="1"
+                                step="1"
+                                className="w-20 px-2 py-1 bg-sapv-blue-light border border-sapv-gray-dark rounded-md"
+                                aria-label="Tempo padrão do orador em minutos"
+                            />
+                            <Button onClick={handleSetDefaultTime} size="sm" variant="secondary">Definir</Button>
+                        </div>
                         {session.interruptionRequest?.active && (
                             <div className="bg-yellow-900 border border-yellow-500 text-yellow-300 p-4 rounded-lg mb-4 flex justify-between items-center animate-pulse">
                                 <div className="flex items-center">
@@ -368,7 +396,6 @@ const PresidenteDashboard: React.FC = () => {
                                     </div>
                                 )}
                                 <div className="flex flex-wrap gap-2 mt-4 justify-center">
-                                    <Button onClick={() => setSpeakerTimer(300)} disabled={!!session.speakerTimerEndTime}><Play size={16} /> Iniciar Tempo</Button>
                                     <Button onClick={() => pauseSpeakerTimer()} variant='secondary' disabled={!session.speakerTimerEndTime}>
                                         {session.speakerTimerPaused ? <Play size={16} className="mr-1"/> : <Pause size={16} className="mr-1"/>} 
                                         {session.speakerTimerPaused ? 'Retomar' : 'Pausar'}
@@ -462,8 +489,14 @@ const PresidenteDashboard: React.FC = () => {
                             {presentMembers.map(member => {
                                 const isMicOn = session.microphoneStatus[member.uid];
                                 const isSpeaking = session.currentSpeaker?.uid === member.uid;
+                                const rowStyle = isSpeaking
+                                    ? 'bg-blue-800 ring-2 ring-blue-500'
+                                    : isMicOn
+                                    ? 'bg-green-900/50'
+                                    : 'bg-sapv-blue-dark';
+
                                 return (
-                                    <div key={member.uid} className={`flex items-center justify-between p-2 rounded ${isSpeaking ? 'bg-blue-800 ring-2 ring-blue-500' : 'bg-sapv-blue-dark'}`}>
+                                    <div key={member.uid} className={`flex items-center justify-between p-2 rounded transition-colors ${rowStyle}`}>
                                         <span className={`font-semibold ${isSpeaking ? 'text-sapv-highlight' : ''}`}>{member.name}</span>
                                         <Button 
                                             size="sm" 
@@ -479,6 +512,19 @@ const PresidenteDashboard: React.FC = () => {
                             })}
                             {presentMembers.length === 0 && <p className="text-sapv-gray text-center py-4">Nenhum vereador presente.</p>}
                         </div>
+                        {presentMembers.length > 0 && (
+                            <div className="border-t border-sapv-gray-dark mt-4 pt-4">
+                                <Button
+                                    onClick={muteAllMicrophones}
+                                    variant="secondary"
+                                    size="sm"
+                                    className="w-full"
+                                    disabled={areAllMicsOff}
+                                >
+                                    <MicOff size={16} className="mr-2"/> Silenciar Todos os Microfones
+                                </Button>
+                            </div>
+                        )}
                     </Card>
                      <Card title="Chat Operacional da Mesa" className="flex flex-col h-96">
                         <OperationalChat />

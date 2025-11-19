@@ -1,0 +1,224 @@
+/* Oeni Style - Minimalist High-End Clean */
+:root {
+  --bg-color: #FFFFFF;
+  --text-color: #000000;
+  --text-gray: #333333;
+  --border-light: #E0E0E0;
+  --border-focus: #000000;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-gray);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Splash Screen */
+.splash-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.splash-icon {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.splash-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.splash-icon .draw-animation {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: draw 2s ease-out forwards;
+}
+
+.splash-icon .arc-animation {
+  animation-delay: 1.5s;
+}
+
+.splash-icon .dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background-color: var(--text-color);
+  border-radius: 50%;
+  opacity: 0;
+  animation: orbit 4s linear infinite, fadeIn 0.5s ease-out 2s forwards;
+}
+
+.dot1 { animation-delay: 2.1s, 2.1s; }
+.dot2 { animation-delay: 2.3s, 2.3s; }
+.dot3 { animation-delay: 2.5s, 2.5s; }
+
+
+.splash-text {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.splash-text h1 {
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin: 0;
+}
+
+.splash-text p {
+  font-size: 1rem;
+  color: var(--text-gray);
+  margin-top: 0.5rem;
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(55px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(55px) rotate(-360deg); }
+}
+
+/* Onboarding Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+  background-color: var(--bg-color);
+  padding: 2.5rem;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.4s ease-out;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-gray);
+  padding: 0.5rem;
+}
+
+.modal-title {
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 500;
+  margin-bottom: 2rem;
+  color: var(--text-color);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  color: var(--text-gray);
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-light);
+  padding: 0.5rem 0.25rem;
+  font-size: 1rem;
+  color: var(--text-color);
+  transition: border-color 0.2s ease-in-out;
+  border-radius: 0; /* Para garantir que apenas a linha inferior apareça */
+}
+
+.form-input:focus {
+  outline: none;
+  border-bottom: 2px solid var(--border-focus);
+}
+
+.form-button {
+  width: 100%;
+  padding: 1rem;
+  margin-top: 1.5rem;
+  background-color: var(--text-color);
+  color: var(--bg-color);
+  border: 1px solid var(--text-color);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  border-radius: 6px;
+}
+.form-button:hover {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Home Page */
+.home-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 2rem;
+    text-align: center;
+}
+.home-page h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+.home-page p {
+    font-size: 1.2rem;
+    color: var(--text-gray);
+    margin-top: 0.5rem;
+}

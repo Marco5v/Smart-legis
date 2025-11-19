@@ -1,5 +1,5 @@
 {
-  "name": "smart-legis---sistema-de-votação",
+  "name": "smart-legis--sistema-de-votação",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.9.6",
     "react": "^19.2.0",
-    "recharts": "^3.4.1",
-    "lucide-react": "^0.553.0"
+    "lucide-react": "^0.553.0",
+    "react-router-dom": "^7.9.6",
+    "recharts": "^3.4.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

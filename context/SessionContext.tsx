@@ -18,6 +18,7 @@ const initialState: SessionState = {
   speakerTimerEndTime: null,
   speakerTimerPaused: false,
   speakerHistory: [],
+  defaultSpeakerDuration: 300, // 5 minutes in seconds
   interruptionRequest: null,
   pointOfOrderRequest: null,
   operationalChat: [],
@@ -57,6 +58,7 @@ interface SessionContextType {
   setSpeakerTimer: (durationInSeconds: number) => void;
   pauseSpeakerTimer: () => void;
   addSpeakerTime: (seconds: number) => void;
+  setDefaultSpeakerDuration: (durationInSeconds: number) => void;
   requestInterruption: (vereador: UserProfile) => void;
   resolveInterruption: (granted: boolean) => void;
   requestPointOfOrder: (vereador: UserProfile) => void;
@@ -64,6 +66,7 @@ interface SessionContextType {
   // FIX: Correctly typed the 'user' parameter using Pick<UserProfile, ...> to resolve the generic type error.
   sendOperationalChatMessage: (user: Pick<UserProfile, 'uid' | 'name' | 'role'>, message: string) => void;
   toggleMicrophone: (vereadorId: string) => void;
+  muteAllMicrophones: () => void;
   startSymbolicVoting: () => void;
   resolveSymbolicVote: (result: 'approved' | 'rejected', presidentName: string) => void;
   requestVerification: (user: UserProfile) => void;
@@ -256,12 +259,16 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
         setSession(s => {
             const newQueue = [...s.speakerQueue];
             const nextSpeaker = newQueue.shift() || null;
+            
+            const newTimerEndTime = nextSpeaker ? Date.now() + s.defaultSpeakerDuration * 1000 : null;
+
             return {
                 ...s,
                 currentSpeaker: nextSpeaker,
                 speakerQueue: newQueue,
                 panelView: nextSpeaker ? PanelView.SPEAKER : s.panelView,
-                speakerTimerEndTime: null,
+                speakerTimerEndTime: newTimerEndTime,
+                speakerTimerPaused: false, // Garante que o cronômetro não esteja pausado ao iniciar
             };
         });
     }, []);
@@ -275,11 +282,21 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
     const setSpeakerTimer = useCallback((durationInSeconds: number) => setSession(s => ({ ...s, speakerTimerEndTime: Date.now() + durationInSeconds * 1000 })), []);
     const pauseSpeakerTimer = useCallback(() => setSession(s => ({ ...s, speakerTimerPaused: !s.speakerTimerPaused })), []); // Basic toggle
     const addSpeakerTime = useCallback((seconds: number) => setSession(s => ({...s, speakerTimerEndTime: (s.speakerTimerEndTime || Date.now()) + seconds * 1000 })), []);
+    const setDefaultSpeakerDuration = useCallback((durationInSeconds: number) => setSession(s => ({...s, defaultSpeakerDuration: durationInSeconds })), []);
     const requestInterruption = useCallback((vereador: UserProfile) => setSession(s => ({ ...s, interruptionRequest: { from: vereador, active: true } })), []);
     const resolveInterruption = useCallback(() => setSession(s => ({...s, interruptionRequest: null })), []);
     const requestPointOfOrder = useCallback((vereador: UserProfile) => setSession(s => ({ ...s, pointOfOrderRequest: { from: vereador, active: true } })), []);
     const resolvePointOfOrder = useCallback(() => setSession(s => ({ ...s, pointOfOrderRequest: null })), []);
     const toggleMicrophone = useCallback((vereadorId: string) => setSession(s => ({...s, microphoneStatus: { ...s.microphoneStatus, [vereadorId]: !s.microphoneStatus[vereadorId]}})), []);
+    const muteAllMicrophones = useCallback(() => {
+      setSession(s => {
+          const newStatus = { ...s.microphoneStatus };
+          Object.keys(newStatus).forEach(key => {
+              newStatus[key] = false;
+          });
+          return { ...s, microphoneStatus: newStatus };
+      });
+    }, []);
     const startSymbolicVoting = useCallback(() => setSession(s => ({...s, isSymbolicVoting: true, panelView: PanelView.MESSAGE, panelMessage: "VOTAÇÃO SIMBÓLICA"})), []);
     const resolveSymbolicVote = useCallback((result: 'approved' | 'rejected', presidentName: string) => {
       setSession(s => {
@@ -321,8 +338,8 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
       startSession, endSession, registerPresence, togglePresence, setPhase,
       setPanelView, hideVoting, setPanelMessage, setCurrentProject, setVotingStatus, castVote,
       overrideVote, calculateResult, restartVoting, annulVoting, requestToSpeak, advanceSpeakerQueue,
-      setSpeakerTimer, pauseSpeakerTimer, addSpeakerTime, requestInterruption, resolveInterruption,
-      requestPointOfOrder, resolvePointOfOrder, sendOperationalChatMessage, toggleMicrophone,
+      setSpeakerTimer, pauseSpeakerTimer, addSpeakerTime, setDefaultSpeakerDuration, requestInterruption, resolveInterruption,
+      requestPointOfOrder, resolvePointOfOrder, sendOperationalChatMessage, toggleMicrophone, muteAllMicrophones,
       startSymbolicVoting, resolveSymbolicVote, requestVerification, resolveVerification,
       addProject, addAmendment, updateAmendment, deleteAmendment, publishAta, saveAtaDraft, addCommission, addParecer,
     }}>

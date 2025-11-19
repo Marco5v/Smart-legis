@@ -145,6 +145,7 @@ export interface SessionState {
   speakerTimerEndTime: number | null;
   speakerTimerPaused: boolean;
   speakerHistory: { speaker: UserProfile, duration: number }[];
+  defaultSpeakerDuration: number;
   interruptionRequest: { from: UserProfile; active: boolean } | null;
   pointOfOrderRequest: { from: UserProfile; active: boolean } | null;
   operationalChat: ChatMessage[];
