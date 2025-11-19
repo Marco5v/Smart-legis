@@ -55,13 +55,15 @@ const ReadingPanel: React.FC<{
                 <p className="text-3xl font-semibold text-white mt-4">
                   AUTOR: {project.author.name.toUpperCase()}
                 </p>
+                <p className="text-2xl text-sapv-gray-light mt-2">
+                  INSTITUIÇÃO: {institution.toUpperCase()}
+                </p>
             </div>
             
             <div className="grid grid-cols-2 gap-x-16 gap-y-6 text-3xl font-semibold w-full max-w-4xl text-left pl-16">
                  <p>TURNO ÚNICO</p>
                  <p>QUORUM: {project.votingRules.majority.toUpperCase()}</p>
                  <p>TRÂMITE: {project.turns?.toUpperCase()}</p>
-                 <p>INSTITUIÇÃO: {institution.toUpperCase()}</p>
             </div>
 
             <img src="https://picsum.photos/seed/brasao/160" alt="Brasão do Município" className="h-44 mt-8" />
