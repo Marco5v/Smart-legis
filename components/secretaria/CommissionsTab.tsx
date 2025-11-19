@@ -69,7 +69,7 @@ export const CommissionsTab: React.FC = () => {
                         </div>
                     </div>
                     <div>
-                         <label className="block text-sm font-medium mb-2">Membros da Comissão</p>
+                         <label className="block text-sm font-medium mb-2">Membros da Comissão</label>
                          <div className={`p-3 bg-sapv-blue-dark rounded-md min-h-[48px] border ${errors.members ? 'border-red-500' : 'border-sapv-gray-dark'}`}>
                              {selectedMembers.length > 0 ? (
                                 <div className="space-y-2">

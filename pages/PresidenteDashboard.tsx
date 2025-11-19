@@ -26,6 +26,40 @@ const PresidenteDashboard: React.FC = () => {
     const [selectedBlockItems, setSelectedBlockItems] = useState<Set<string>>(new Set());
     const [pautaTab, setPautaTab] = useState<'Expediente' | 'Ordem do Dia'>('Expediente');
     const [feedback, setFeedback] = useState('');
+    const [remainingSpeakerTime, setRemainingSpeakerTime] = useState<number | null>(null);
+
+    // Countdown timer for speaker
+    useEffect(() => {
+        if (!session.speakerTimerEndTime) {
+            setRemainingSpeakerTime(null);
+            return;
+        }
+
+        const interval = setInterval(() => {
+            if (!session.speakerTimerPaused) { // Only update if not paused
+                const now = Date.now();
+                const diff = session.speakerTimerEndTime - now;
+                setRemainingSpeakerTime(Math.max(0, Math.floor(diff / 1000)));
+            }
+        }, 1000);
+
+        // Initial calculation if not paused
+        if (!session.speakerTimerPaused) {
+            const now = Date.now();
+            const diff = session.speakerTimerEndTime - now;
+            setRemainingSpeakerTime(Math.max(0, Math.floor(diff / 1000)));
+        }
+
+        return () => clearInterval(interval);
+    }, [session.speakerTimerEndTime, session.speakerTimerPaused]);
+
+    const formatTime = (seconds: number | null): string => {
+        if (seconds === null) return '00:00';
+        const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const secs = (seconds % 60).toString().padStart(2, '0');
+        return `${mins}:${secs}`;
+    };
+
 
     // --- State and Logic for Reorderable Pauta ---
     const buildHierarchy = (projectList: Project[]): ProjectWithChildren[] => {
@@ -328,10 +362,18 @@ const PresidenteDashboard: React.FC = () => {
                             <div className="bg-sapv-blue-dark p-4 rounded text-center">
                                 <p className="text-sm text-sapv-gray">Orador atual</p>
                                 <p className="text-3xl font-bold">{session.currentSpeaker.name}</p>
+                                 {session.speakerTimerEndTime && (
+                                    <div className={`font-mono text-6xl font-bold my-4 ${remainingSpeakerTime !== null && remainingSpeakerTime < 30 ? 'text-red-500 animate-pulse' : 'text-sapv-highlight'}`}>
+                                        {formatTime(remainingSpeakerTime)}
+                                    </div>
+                                )}
                                 <div className="flex flex-wrap gap-2 mt-4 justify-center">
                                     <Button onClick={() => setSpeakerTimer(300)} disabled={!!session.speakerTimerEndTime}><Play size={16} /> Iniciar Tempo</Button>
-                                    <Button onClick={() => pauseSpeakerTimer()} variant='secondary'><Pause size={16} /> Pausar</Button>
-                                    <Button onClick={() => addSpeakerTime(30)} variant='secondary'><Plus size={16} /> +30s</Button>
+                                    <Button onClick={() => pauseSpeakerTimer()} variant='secondary' disabled={!session.speakerTimerEndTime}>
+                                        {session.speakerTimerPaused ? <Play size={16} className="mr-1"/> : <Pause size={16} className="mr-1"/>} 
+                                        {session.speakerTimerPaused ? 'Retomar' : 'Pausar'}
+                                    </Button>
+                                    <Button onClick={() => addSpeakerTime(30)} variant='secondary' disabled={!session.speakerTimerEndTime}><Plus size={16} /> +30s</Button>
                                     <Button onClick={advanceSpeakerQueue} variant='danger'><XCircle size={16} /> Encerrar Palavra</Button>
                                 </div>
                             </div>
