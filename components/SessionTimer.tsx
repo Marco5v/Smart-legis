@@ -41,7 +41,7 @@ const SessionTimer: React.FC<SessionTimerProps> = ({ startTime, isPaused, pauseT
     };
 
     return (
-        <div className={`text-3xl md:text-5xl font-mono font-bold ${isPaused ? 'text-yellow-500' : 'text-black'}`}>
+        <div className={`text-3xl md:text-5xl font-mono font-bold ${isPaused ? 'text-yellow-400' : 'text-sapv-highlight'}`}>
             {formatTime(elapsedSeconds)}
         </div>
     );
