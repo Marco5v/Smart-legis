@@ -1,19 +1,26 @@
 
 import React from 'react';
 import { useSession } from '../context/SessionContext';
-import { PanelView } from '../types';
+import { PanelView, SessionPhase } from '../types';
 import OffPanel from '../components/panel/OffPanel';
 import SpeakerPanel from '../components/panel/SpeakerPanel';
 import PresencePanel from '../components/panel/PresencePanel';
 import MessagePanel from '../components/panel/MessagePanel';
 import ReadingPanel from '../components/panel/ReadingPanel';
+import VotingPanel from '../components/panel/VotingPanel';
 
 const PanelPage: React.FC = () => {
   const { session, councilMembers } = useSession();
 
   const renderPanel = () => {
+    // Durante a Ordem do Dia, a votação deve exibir o painel de leitura com os detalhes do projeto e o placar.
+    if (session.phase === SessionPhase.ORDEM_DO_DIA && session.currentProject && (session.votingOpen || session.votingResult)) {
+        return <ReadingPanel project={session.currentProject} />;
+    }
+    
     switch (session.panelView) {
       case PanelView.VOTING:
+        return <VotingPanel />;
       case PanelView.PRESENCE:
         return <PresencePanel
                   councilMembers={councilMembers}
@@ -41,7 +48,9 @@ const PanelPage: React.FC = () => {
 
   return (
     <div className="w-screen h-screen overflow-hidden bg-sapv-blue-dark">
-      {renderPanel()}
+      <div key={session.panelView} className="w-full h-full panel-fade-in">
+        {renderPanel()}
+      </div>
     </div>
   );
 };

@@ -492,7 +492,7 @@ const PresidenteDashboard: React.FC = () => {
                                 const isSpeaking = session.currentSpeaker?.uid === member.uid;
                                 const rowStyle = isSpeaking
                                     ? 'bg-blue-800 ring-2 ring-blue-500'
-                                    : 'bg-sapv-blue-dark';
+                                    : isMicOn ? 'bg-green-900/50' : 'bg-sapv-blue-dark';
 
                                 return (
                                     <div key={member.uid} className={`flex items-center justify-between p-2 rounded transition-colors ${rowStyle}`}>
