@@ -47,10 +47,10 @@ const PanelPage: React.FC = () => {
       case PanelView.VOTING:
         return <VotingPanel />;
       case PanelView.PRESENCE:
+        // FIX: Removed 'votes' prop as it is not defined in PresencePanel's props.
         return <PresencePanel
                   councilMembers={councilMembers}
                   presentMembers={Object.keys(session.presence).filter(id => session.presence[id])}
-                  votes={session.votes}
                />;
       case PanelView.SPEAKER:
         return <SpeakerPanel 
