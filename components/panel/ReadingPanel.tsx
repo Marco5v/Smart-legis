@@ -1,12 +1,13 @@
-
 import React from 'react';
 import { Project } from '../../types';
 import Clock from './Clock';
+import { useSession } from '../../context/SessionContext';
 
 const ReadingPanel: React.FC<{
   project: Project | null;
 }> = ({ project }) => {
-  
+  const { legislatureConfig } = useSession();
+
   if (!project) {
     return (
       <div className="w-full h-full flex items-center justify-center text-white text-4xl bg-black">
@@ -20,6 +21,7 @@ const ReadingPanel: React.FC<{
   // Hardcoded for visual fidelity to the provided image
   const sessionInfo = `808ª SESSÃO ORDINÁRIA DO 2º PERÍODO LEGISLATIVO DE`;
   const fullDate = new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  const institution = project.proposingInstitution || `CÂMARA MUNICIPAL DE ${legislatureConfig.cityName}`;
 
   return (
     <div className="w-full h-full flex flex-col text-white p-6 bg-black font-sans antialiased">
@@ -56,7 +58,7 @@ const ReadingPanel: React.FC<{
                  <p>TURNO ÚNICO</p>
                  <p>QUORUM: {project.votingRules.majority.toUpperCase()}</p>
                  <p>TRÂMITE: {project.turns?.toUpperCase()}</p>
-                 <p>INSTITUIÇÃO: CÂMARA MUNICIPAL</p>
+                 <p>INSTITUIÇÃO: {institution.toUpperCase()}</p>
             </div>
 
             <img src="https://picsum.photos/seed/brasao/160" alt="Brasão do Município" className="h-44 mt-8" />
