@@ -1,6 +1,6 @@
+
 import React from 'react';
 import { UserProfile } from '../types';
-import { Check, X } from 'lucide-react';
 
 interface CouncilMemberCardProps {
     member: UserProfile;
@@ -8,29 +8,18 @@ interface CouncilMemberCardProps {
 }
 
 const CouncilMemberCard: React.FC<CouncilMemberCardProps> = ({ member, isPresent }) => {
-    const cardClasses = `
-        border-2 rounded-lg p-3 text-center transition-all duration-300
-        ${isPresent ? 'border-green-500 bg-green-50 shadow-md' : 'border-gray-300 bg-white opacity-80'}
-    `;
-
-    const statusClasses = `
-        flex items-center justify-center gap-1 text-xs font-bold mt-2
-        ${isPresent ? 'text-green-700' : 'text-red-700'}
-    `;
-
     return (
-        <div className={cardClasses}>
+        <div className="bg-white rounded-lg p-3 text-center border border-gray-200 shadow-sm hover:shadow-lg transition-shadow duration-300 relative">
+            <div className={`absolute top-2 right-2 w-3 h-3 rounded-full border border-white ${isPresent ? 'bg-green-500' : 'bg-gray-400'}`}></div>
             <img 
                 src={member.photoUrl} 
                 alt={`Foto de ${member.name}`}
-                className={`w-20 h-20 rounded-full mx-auto mb-2 border-4 ${isPresent ? 'border-green-200' : 'border-gray-200'}`}
+                className={`w-24 h-24 rounded-full mx-auto mb-2 border-4 border-white shadow-md ${!isPresent && 'filter grayscale'}`}
             />
-            <p className="font-bold text-sm truncate">{member.name}</p>
+            <p className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 to-gray-500 truncate text-sm">
+                {member.name}
+            </p>
             <p className="text-xs text-gray-500">{member.party}</p>
-            <div className={statusClasses}>
-                {isPresent ? <Check size={14} /> : <X size={14} />}
-                <span>{isPresent ? 'PRESENTE' : 'AUSENTE'}</span>
-            </div>
         </div>
     );
 };

@@ -1,137 +1,57 @@
 
-import React, { useState, useEffect } from 'react';
-import { UserProfile, UserRole, Votes, VoteOption } from '../../types';
+import React from 'react';
+import { UserProfile, Votes } from '../../types';
+import CouncilMemberCard from '../CouncilMemberCard';
+import { useSession } from '../../context/SessionContext';
 
-interface MemberItemProps {
-    member: UserProfile;
-    isPresent: boolean;
-    vote?: VoteOption;
-}
-
-const MemberItem: React.FC<MemberItemProps> = React.memo(({ member, isPresent, vote }) => {
-    const presenceCircle = <div className={`w-6 h-6 rounded-full border-2 ${isPresent ? 'bg-green-500 border-green-300' : 'border-red-500 bg-black'}`}></div>;
-    
-    const getVoteStyle = () => {
-        if (!vote) return 'text-red-400';
-        switch (vote) {
-            case VoteOption.SIM: return 'text-green-400';
-            case VoteOption.NAO: return 'text-red-500';
-            case VoteOption.ABS: return 'text-yellow-400';
-            default: return 'text-red-400';
-        }
-    }
-
-    return (
-        <div className="flex items-center text-2xl">
-            {presenceCircle}
-            <span className="font-bold text-yellow-400 w-24 ml-3 text-left">{member.boardRole || ''}</span>
-            <span className={`font-semibold flex-1 text-left ${getVoteStyle()}`}>{member.name.toUpperCase()}</span>
-            <span className={`font-semibold ${getVoteStyle()}`}>{member.party}</span>
-        </div>
-    );
-});
-
-
-const PresencePanel: React.FC<{ councilMembers: UserProfile[], presentMembers: string[], votes?: Votes }> = ({ councilMembers, presentMembers, votes = {} }) => {
-    
-    const [time, setTime] = useState(new Date());
-
-    useEffect(() => {
-        const timerId = setInterval(() => setTime(new Date()), 1000);
-        return () => clearInterval(timerId);
-    }, []);
-
-    const president = councilMembers.find(m => m.role === UserRole.PRESIDENTE);
-    const otherMembers = councilMembers
-        .filter(m => m.role !== UserRole.PRESIDENTE)
-        .sort((a, b) => {
-            const roleOrder: { [key: string]: number } = {'Vice-Presidente': 1, '1º Secretário': 2, '2º Secretário': 3};
-            const roleA = a.boardRole ? roleOrder[a.boardRole] || 99 : 99;
-            const roleB = b.boardRole ? roleOrder[b.boardRole] || 99 : 99;
-            if (roleA !== roleB) return roleA - roleB;
-            return a.name.localeCompare(b.name);
-        });
+const PresencePanel: React.FC<{ councilMembers: UserProfile[], presentMembers: string[], votes?: Votes }> = ({ councilMembers, presentMembers }) => {
+    const { session } = useSession();
     
     const presentCount = presentMembers.length;
     const totalMembers = councilMembers.length;
     const absentCount = totalMembers - presentCount;
 
-    const midPoint = Math.ceil(otherMembers.length / 2);
-    const firstColumn = otherMembers.slice(0, midPoint);
-    const secondColumn = otherMembers.slice(midPoint);
-    
-    const simVotes = Object.values(votes).filter(v => v === VoteOption.SIM).length;
-    const naoVotes = Object.values(votes).filter(v => v === VoteOption.NAO).length;
-    const absVotes = Object.values(votes).filter(v => v === VoteOption.ABS).length;
-
     return (
-        <div className="w-full h-full bg-black text-white p-4 flex flex-col font-sans">
-            <header className="w-full bg-blue-800 text-center py-2 border-b-2 border-yellow-400">
-                <h1 className="text-4xl font-black tracking-wider">CÂMARA MUNICIPAL DE EXEMPLO</h1>
-            </header>
-
-            <main className="flex-grow flex gap-4 py-4 px-2">
-                <div className="w-4/5 flex flex-col">
-                    {president && (
-                         <div className="flex items-center text-2xl border-b border-yellow-400 pb-3 mb-3">
-                            <span className="font-bold text-yellow-400">PRESIDENTE DA CÂMARA:</span>
-                            <div className={`w-6 h-6 rounded-full border-2 ${presentMembers.includes(president.uid) ? 'bg-green-500 border-green-300' : 'border-red-500 bg-black'} mx-3`}></div>
-                            <span className="font-semibold text-red-400">{president.name.toUpperCase()}</span>
-                            <span className="font-semibold text-red-400 ml-4">{president.party}</span>
-                        </div>
-                    )}
-
-                    <div className="flex-grow grid grid-cols-2 gap-x-12 gap-y-3 content-start">
-                        <div className="space-y-3">
-                            {firstColumn.map(m => <MemberItem key={m.uid} member={m} isPresent={presentMembers.includes(m.uid)} vote={votes[m.uid]} />)}
-                        </div>
-                         <div className="space-y-3">
-                            {secondColumn.map(m => <MemberItem key={m.uid} member={m} isPresent={presentMembers.includes(m.uid)} vote={votes[m.uid]} />)}
-                        </div>
+        <div className="w-full h-full text-black flex flex-col p-4 md:p-6 font-sans">
+            <header className="flex justify-between items-center border-b-2 border-gray-200 pb-3">
+                <div className="flex items-center gap-4">
+                    <img src="https://picsum.photos/seed/brasao/60" alt="Brasão" className="h-12 md:h-16" />
+                    <div>
+                        <h1 className="text-xl md:text-2xl font-bold text-gray-800">Câmara Municipal de {session.cityName}</h1>
+                        <p className="text-md md:text-lg text-gray-600">{session.sessionType}</p>
                     </div>
                 </div>
+                <div className="text-right">
+                    <h2 className="text-xl md:text-2xl font-bold text-gray-800">Painel de Presença</h2>
+                    <p className="text-md md:text-lg text-gray-600">{new Date().toLocaleDateString('pt-BR')}</p>
+                </div>
+            </header>
 
-                <aside className="w-1/5 h-full flex flex-col justify-between items-center space-y-4 border-l-2 border-yellow-400 pl-4">
-                    <div className="w-full space-y-2 text-xl font-bold">
-                        <div className="flex justify-between items-center p-1">
-                            <span>PARLAMENTARES</span>
-                            <span className="font-mono text-2xl border border-gray-500 px-2">{totalMembers.toString().padStart(2, '0')}</span>
-                        </div>
-                         <div className="flex justify-between items-center p-1 text-orange-400">
-                            <span>AUSENTES</span>
-                            <span className="font-mono text-2xl border border-gray-500 px-2">{absentCount.toString().padStart(2, '0')}</span>
-                        </div>
-                         <div className="flex justify-between items-center p-1 text-cyan-400">
-                            <span>PRESENTES</span>
-                            <span className="font-mono text-2xl border border-gray-500 px-2">{presentCount.toString().padStart(2, '0')}</span>
-                        </div>
-                    </div>
-
-                    <div className="w-full grid grid-cols-3 gap-2 text-center">
-                        <div className="border border-gray-600 p-1">
-                            <p className="text-5xl font-black text-green-500">{simVotes}</p>
-                            <p className="font-semibold bg-green-500 text-black text-xl">SIM</p>
-                        </div>
-                        <div className="border border-gray-600 p-1">
-                            <p className="text-5xl font-black text-red-500">{naoVotes}</p>
-                            <p className="font-semibold bg-red-500 text-black text-xl">NÃO</p>
-                        </div>
-                        <div className="border border-gray-600 p-1">
-                            <p className="text-5xl font-black text-yellow-400">{absVotes}</p>
-                            <p className="font-semibold bg-yellow-400 text-black text-xl">ABS</p>
-                        </div>
-                    </div>
-
-                    <div className="w-full text-center text-2xl font-mono text-gray-400 border border-gray-600 py-1">
-                        <div>{time.toLocaleTimeString('pt-BR')}</div>
-                        <div className="text-lg">{time.toLocaleDateString('pt-BR')}</div>
-                    </div>
-                </aside>
+            <main className="flex-grow my-4 overflow-y-auto">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    {councilMembers.map(member => (
+                        <CouncilMemberCard 
+                            key={member.uid} 
+                            member={member} 
+                            isPresent={presentMembers.includes(member.uid)}
+                        />
+                    ))}
+                </div>
             </main>
 
-            <footer className="w-full bg-gray-900 text-yellow-300 py-2 flex justify-between items-center px-6 border-t-2 border-gray-700">
-                 <h2 className="text-xl font-bold">SESSÃO ORDINÁRIA</h2>
-                 <span className="text-lg font-mono">{new Date().toLocaleDateString('pt-BR')}</span>
+            <footer className="border-t-2 border-gray-200 pt-3 flex justify-around items-center text-xl font-bold">
+                <div className="text-center">
+                    <p className="text-gray-500 text-sm">TOTAL</p>
+                    <p>{totalMembers}</p>
+                </div>
+                 <div className="text-center">
+                    <p className="text-green-600 text-sm">PRESENTES</p>
+                    <p className="text-green-600">{presentCount}</p>
+                </div>
+                 <div className="text-center">
+                    <p className="text-red-600 text-sm">AUSENTES</p>
+                    <p className="text-red-600">{absentCount}</p>
+                </div>
             </footer>
         </div>
     );

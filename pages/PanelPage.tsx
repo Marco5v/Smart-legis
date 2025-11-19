@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useSession } from '../context/SessionContext';
 import { PanelView } from '../types';
 import OffPanel from '../components/panel/OffPanel';
@@ -10,6 +10,17 @@ import ReadingPanel from '../components/panel/ReadingPanel';
 
 const PanelPage: React.FC = () => {
   const { session, councilMembers } = useSession();
+
+  const panelBackgroundClass = useMemo(() => {
+    switch (session.panelView) {
+      case PanelView.PRESENCE:
+      case PanelView.VOTING:
+        return 'bg-gray-100';
+      default:
+        return 'bg-sapv-blue-dark';
+    }
+  }, [session.panelView]);
+
 
   const renderPanel = () => {
     switch (session.panelView) {
@@ -40,7 +51,7 @@ const PanelPage: React.FC = () => {
   };
 
   return (
-    <div className="w-screen h-screen bg-sapv-blue-dark overflow-hidden">
+    <div className={`w-screen h-screen overflow-hidden transition-colors duration-500 ${panelBackgroundClass}`}>
       {renderPanel()}
     </div>
   );
