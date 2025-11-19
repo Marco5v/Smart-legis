@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Project } from '../../types';
 import Clock from './Clock';
@@ -16,14 +17,12 @@ const ReadingPanel: React.FC<{
   
   const isBlockVote = project.id.startsWith('block-vote-');
 
-  const sessionInfo = `808ª SESSÃO ORDINÁRIA DO 2º PERÍODO LEGISLATIVO DE`;
+  const sessionInfo = `SESSÃO ORDINÁRIA`;
   const dateInfo = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
     <div className="w-full h-full flex flex-col text-white p-6 bg-black font-sans">
-      {/* Main Content */}
       <main className="flex-grow grid grid-cols-12 gap-8 items-center">
-        {/* Left Side: Ementa */}
         <div className="col-span-5 h-3/4 border-2 border-gray-600 p-6 flex flex-col">
           <h3 className="text-purple-400 font-bold text-3xl mb-6 text-center border-b-2 border-purple-400 pb-3">
             {isBlockVote ? 'VOTAÇÃO EM BLOCO' : project.matterType || 'PROJETO'}
@@ -39,7 +38,6 @@ const ReadingPanel: React.FC<{
           </div>
         </div>
         
-        {/* Right Side: Details */}
         <div className="col-span-7 h-3/4 flex flex-col items-center justify-around">
             <h2 className="text-3xl font-bold text-center">{sessionInfo}</h2>
             
@@ -60,7 +58,6 @@ const ReadingPanel: React.FC<{
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="w-full text-center py-3 flex justify-between items-center px-6 text-xl font-semibold">
           <span>{dateInfo}</span>
           <Clock className="font-mono" />

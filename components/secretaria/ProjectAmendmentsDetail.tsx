@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSession } from '../../context/SessionContext';
 import { Project, Amendment } from '../../types';
@@ -118,7 +119,6 @@ export const ProjectAmendmentsDetail: React.FC<ProjectAmendmentsDetailProps> = (
   return (
     <div className="p-6 bg-sapv-blue-dark">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* List of Existing Amendments */}
           <section>
             <h3 className="text-lg font-semibold text-sapv-highlight mb-4">Emendas Apresentadas ({project.amendments?.length || 0})</h3>
             <div className="space-y-3 pr-2 max-h-80 overflow-y-auto">
@@ -140,7 +140,6 @@ export const ProjectAmendmentsDetail: React.FC<ProjectAmendmentsDetailProps> = (
             </div>
           </section>
 
-          {/* Form to Add New Amendment */}
           <section className="border-t md:border-t-0 md:border-l border-sapv-gray-dark pt-6 md:pt-0 md:pl-6">
             <h3 className="text-lg font-semibold text-sapv-highlight mb-4">{editingAmendment ? 'Editar Emenda' : 'Adicionar Nova Emenda'}</h3>
              {successMessage && (

@@ -1,5 +1,5 @@
 {
-  "name": "smart-legis--sistema-de-votação",
+  "name": "painel-eletrônico-legislativo",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,7 +13,7 @@
     "react": "^19.2.0",
     "lucide-react": "^0.553.0",
     "react-router-dom": "^7.9.6",
-    "recharts": "^3.4.1"
+    "recharts": "^2.12.7"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

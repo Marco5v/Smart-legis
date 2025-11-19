@@ -1,10 +1,11 @@
+
 import React, { useMemo, useCallback, useState } from 'react';
 import { LogOut, Mic, Check, X, Minus, AlertOctagon, HelpCircle, FileText, Vote, Briefcase, BookOpen, Search } from 'lucide-react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { useAuth } from '../context/AuthContext';
 import { useSession } from '../context/SessionContext';
-import { VoteOption, UserProfile, Project } from '../types';
+import { VoteOption } from '../types';
 
 const TabButton: React.FC<{label: string, icon: React.ReactNode, isActive: boolean, onClick: () => void}> = ({ label, icon, isActive, onClick }) => (
     <button onClick={onClick} className={`flex-1 flex flex-col items-center justify-center p-4 text-sm font-semibold border-b-4 transition-colors ${isActive ? 'border-sapv-highlight text-sapv-highlight' : 'border-transparent text-sapv-gray hover:text-sapv-gray-light'}`}>

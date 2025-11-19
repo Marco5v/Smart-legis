@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { UserProfile, UserRole } from '../types';
 import { MOCK_USERS } from '../services/mockData';
@@ -11,9 +12,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// FIX: Replaced implementation to break a circular dependency with SessionContext.
-// This introduces setRegisterPresenceFn and makes the login function async.
 
 // A little hack to get the registerPresence function without creating a circular dependency
 let registerPresenceFn: (uid: string) => void = () => {};
@@ -48,7 +46,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 navigate('/dashboard/presidente');
                 break;
               case UserRole.MESA_DIRETORA:
-                // For now, redirecting to president dashboard as well
                 navigate('/dashboard/presidente');
                 break;
               case UserRole.VEREADOR:
@@ -56,6 +53,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 break;
               case UserRole.SECRETARIA:
                 navigate('/dashboard/secretaria');
+                break;
+               case UserRole.ASSESSORIA: // Fallback to a relevant dashboard
+                navigate('/dashboard/comissoes');
                 break;
               case UserRole.PUBLICO:
                 navigate('/portal');

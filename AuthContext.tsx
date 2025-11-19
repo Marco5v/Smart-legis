@@ -1,6 +1,7 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
-import { UserProfile, UserRole } from '../types';
-import { MOCK_USERS } from '../services/mockData';
+import { UserProfile, UserRole } from './types';
+import { MOCK_USERS } from './services/mockData';
 import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
@@ -32,7 +33,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (foundUser) {
             setUser(foundUser);
             
-            // Register presence if user is a council member
             if (foundUser.role === UserRole.VEREADOR) {
                 registerPresenceFn(foundUser.uid);
             }

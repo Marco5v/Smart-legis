@@ -1,21 +1,24 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { LogOut, Play, Vote, Mic, SkipForward, XCircle, Users, Pause, Plus, RotateCcw, Ban, AlertTriangle, CheckCircle, X, HelpCircle, FileText, MessageSquare, MicOff, Layers, CheckSquare as CheckSquareIcon, GripVertical, Save, Upload } from 'lucide-react';
+
+
+import React, { useMemo, useState, useEffect } from 'react';
+import { LogOut, Play, Vote, Mic, XCircle, Pause, Plus, RotateCcw, Ban, AlertTriangle, CheckCircle, X, HelpCircle, Layers, GripVertical, Save, Upload, MicOff } from 'lucide-react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { useSession } from '../context/SessionContext';
 import { useAuth } from '../context/AuthContext';
-import { Project, PanelView, VotingType, MajorityType } from '../types';
+// FIX: Import SessionPhase for type safety
+import { Project, PanelView, VotingType, MajorityType, UserProfile, ProjectWorkflowStatus, SessionPhase } from '../types';
 import { OperationalChat } from '../components/common/OperationalChat';
 
-// FIX: Made ProjectWithChildren recursive to correctly type the project hierarchy.
 type ProjectWithChildren = Project & { children: ProjectWithChildren[] };
 
 
 const PresidenteDashboard: React.FC = () => {
     const { user, logout } = useAuth();
     const { 
-        session, projects, setVotingStatus, 
-        advanceSpeakerQueue, setSpeakerTimer, legislatureConfig,
+        session, 
+        projects, setVotingStatus, 
+        advanceSpeakerQueue, legislatureConfig,
         startSession, endSession, calculateResult, restartVoting,
         annulVoting, pauseSpeakerTimer, addSpeakerTime, resolveInterruption, setCurrentProject,
         resolvePointOfOrder, setPhase, toggleMicrophone, muteAllMicrophones,
@@ -23,17 +26,16 @@ const PresidenteDashboard: React.FC = () => {
         councilMembers, setDefaultSpeakerDuration
     } = useSession();
     
-    const [selectedBlockItems, setSelectedBlockItems] = useState<Set<string>>(new Set());
     const [pautaTab, setPautaTab] = useState<'Expediente' | 'Ordem do Dia'>('Expediente');
     const [feedback, setFeedback] = useState('');
     const [remainingSpeakerTime, setRemainingSpeakerTime] = useState<number | null>(null);
     const [defaultSpeakerTime, setDefaultSpeakerTime] = useState(session.defaultSpeakerDuration / 60);
+    const [selectedBlockItems, setSelectedBlockItems] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         setDefaultSpeakerTime(session.defaultSpeakerDuration / 60);
     }, [session.defaultSpeakerDuration]);
 
-    // Countdown timer for speaker
     useEffect(() => {
         if (!session.speakerTimerEndTime) {
             setRemainingSpeakerTime(null);
@@ -41,17 +43,16 @@ const PresidenteDashboard: React.FC = () => {
         }
 
         const interval = setInterval(() => {
-            if (!session.speakerTimerPaused) { // Only update if not paused
+            if (!session.speakerTimerPaused) {
                 const now = Date.now();
-                const diff = session.speakerTimerEndTime - now;
+                const diff = session.speakerTimerEndTime! - now;
                 setRemainingSpeakerTime(Math.max(0, Math.floor(diff / 1000)));
             }
         }, 1000);
 
-        // Initial calculation if not paused
         if (!session.speakerTimerPaused) {
             const now = Date.now();
-            const diff = session.speakerTimerEndTime - now;
+            const diff = session.speakerTimerEndTime! - now;
             setRemainingSpeakerTime(Math.max(0, Math.floor(diff / 1000)));
         }
 
@@ -65,10 +66,7 @@ const PresidenteDashboard: React.FC = () => {
         return `${mins}:${secs}`;
     };
 
-
-    // --- State and Logic for Reorderable Pauta ---
     const buildHierarchy = (projectList: Project[]): ProjectWithChildren[] => {
-        // FIX: Updated the type of the children array to ProjectWithChildren[] to match the recursive type.
         const projectMap = new Map(projectList.map(p => [p.id, { ...p, children: [] as ProjectWithChildren[] }]));
         const hierarchicalPauta: ProjectWithChildren[] = [];
         projectList.forEach(p => {
@@ -83,8 +81,8 @@ const PresidenteDashboard: React.FC = () => {
     };
 
     const projetosPauta = useMemo(() => projects.filter(p => p.workflowStatus === 'Pronto para Pauta'), [projects]);
-    const projetosExpedienteOriginal = useMemo(() => buildHierarchy(projetosPauta.filter(p => p.projectPhase === 'Expediente')), [projetosPauta]);
-    const projetosOrdemDoDiaOriginal = useMemo(() => buildHierarchy(projetosPauta.filter(p => p.projectPhase === 'Ordem do Dia')), [projetosPauta]);
+    const projetosExpedienteOriginal = useMemo(() => buildHierarchy(projects.filter(p => p.projectPhase === 'Expediente')), [projetosPauta]);
+    const projetosOrdemDoDiaOriginal = useMemo(() => buildHierarchy(projects.filter(p => p.projectPhase === 'Ordem do Dia')), [projetosPauta]);
     
     const [expedienteOrdenado, setExpedienteOrdenado] = useState<ProjectWithChildren[]>([]);
     const [ordemDoDiaOrdenada, setOrdemDoDiaOrdenada] = useState<ProjectWithChildren[]>([]);
@@ -92,7 +90,6 @@ const PresidenteDashboard: React.FC = () => {
     useEffect(() => setExpedienteOrdenado(projetosExpedienteOriginal), [projetosExpedienteOriginal]);
     useEffect(() => setOrdemDoDiaOrdenada(projetosOrdemDoDiaOriginal), [projetosOrdemDoDiaOriginal]);
     
-    // --- Drag and Drop State and Handlers ---
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
@@ -111,8 +108,8 @@ const PresidenteDashboard: React.FC = () => {
             const listUpdater = pautaTab === 'Expediente' ? setExpedienteOrdenado : setOrdemDoDiaOrdenada;
             listUpdater(currentList => {
                 const listCopy = [...currentList];
-                const [draggedItemContent] = listCopy.splice(draggedIndex, 1);
-                listCopy.splice(dragOverIndex, 0, draggedItemContent);
+                const [draggedItemContent] = listCopy.splice(draggedIndex!, 1);
+                listCopy.splice(dragOverIndex!, 0, draggedItemContent);
                 return listCopy;
             });
         }
@@ -120,7 +117,6 @@ const PresidenteDashboard: React.FC = () => {
         setDragOverIndex(null);
     };
 
-    // --- Pauta Persistence Logic ---
     const showFeedback = (message: string) => {
         setFeedback(message);
         setTimeout(() => setFeedback(''), 3000);
@@ -173,7 +169,6 @@ const PresidenteDashboard: React.FC = () => {
         setOrdemDoDiaOrdenada(reorderList(projetosOrdemDoDiaOriginal, savedOrdemDoDiaIds));
         showFeedback('Ordem da pauta carregada.');
     };
-    // --- End of Pauta Logic ---
 
     const handleSetDefaultTime = () => {
         const timeInMinutes = Math.max(0.1, defaultSpeakerTime);
@@ -238,7 +233,7 @@ const PresidenteDashboard: React.FC = () => {
 
     const blockVoteItems = useMemo(() => 
         flattenProjects([...projetosExpedienteOriginal, ...projetosOrdemDoDiaOriginal])
-        .filter(p => p.matterType === 'REQUERIMENTO' || p.matterType === 'Votação em Bloco'), 
+        .filter(p => p.matterType === 'REQUERIMENTO' || p.matterType === 'Votação em Bloco'),
     [projetosExpedienteOriginal, projetosOrdemDoDiaOriginal]);
     
     const handleToggleBlockItem = (projectId: string) => {
@@ -254,22 +249,27 @@ const PresidenteDashboard: React.FC = () => {
     };
 
     const handleVoteEmBloco = () => {
+        if (!user) return;
         const projectsToVote = projects.filter(p => selectedBlockItems.has(p.id));
-        if (projectsToVote.length === 0 || !user) return;
+        if (projectsToVote.length === 0) return;
 
         const description = projectsToVote.map(p => p.title).join('; ');
         const blockVoteProject: Project = {
             id: `block-vote-${Date.now()}`,
             title: `VOTAÇÃO EM BLOCO (${projectsToVote.length} ITENS)`,
             description: description,
-            author: user,
+            author: user as UserProfile,
             votingStatus: 'pending',
-            workflowStatus: 'Pronto para Pauta',
+            // FIX: Use enum member instead of string literal
+            workflowStatus: ProjectWorkflowStatus.PRONTO_PARA_PAUTA,
             votingRules: {
                 type: VotingType.SIMBOLICA,
                 majority: projectsToVote[0]?.votingRules.majority || MajorityType.SIMPLES,
             },
             blockVotedProjectIds: Array.from(selectedBlockItems),
+            number: '',
+            date: new Date().toISOString(),
+            matterType: 'VOTAÇÃO EM BLOCO'
         };
 
         setCurrentProject(blockVoteProject);
@@ -302,8 +302,9 @@ const PresidenteDashboard: React.FC = () => {
                                 </Button>
                             ) : (
                                 <>
-                                    <Button onClick={() => setPhase('Expediente')} variant={session.phase === 'Expediente' ? 'primary' : 'secondary'}>Iniciar Expediente</Button>
-                                    <Button onClick={() => setPhase('Ordem do Dia')} variant={session.phase === 'Ordem do Dia' ? 'primary' : 'secondary'}>Iniciar Ordem do Dia</Button>
+                                    {/* FIX: Use enum members for setting phase */}
+                                    <Button onClick={() => setPhase(SessionPhase.EXPEDIENTE)} variant={session.phase === SessionPhase.EXPEDIENTE ? 'primary' : 'secondary'}>Iniciar Expediente</Button>
+                                    <Button onClick={() => setPhase(SessionPhase.ORDEM_DO_DIA)} variant={session.phase === SessionPhase.ORDEM_DO_DIA ? 'primary' : 'secondary'}>Iniciar Ordem do Dia</Button>
                                     <Button onClick={endSession} variant="danger" size="lg" className="flex-1 py-4 text-xl">
                                         <XCircle size={24} className="mr-3" /> Encerrar e Sincronizar
                                     </Button>
@@ -491,8 +492,6 @@ const PresidenteDashboard: React.FC = () => {
                                 const isSpeaking = session.currentSpeaker?.uid === member.uid;
                                 const rowStyle = isSpeaking
                                     ? 'bg-blue-800 ring-2 ring-blue-500'
-                                    : isMicOn
-                                    ? 'bg-green-900/50'
                                     : 'bg-sapv-blue-dark';
 
                                 return (

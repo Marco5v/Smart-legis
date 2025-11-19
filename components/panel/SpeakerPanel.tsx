@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../../types';
 
@@ -47,7 +48,7 @@ const SpeakerPanel: React.FC<SpeakerPanelProps> = React.memo(({ currentSpeaker, 
       <h2 className="text-4xl font-bold text-sapv-gray-light mb-8">TRIBUNA LIVRE</h2>
       <div className="flex items-center mb-8">
          <img 
-            src={`https://picsum.photos/seed/${currentSpeaker.uid}/150`}
+            src={currentSpeaker.photoUrl}
             alt={currentSpeaker.name}
             className="w-36 h-36 rounded-full border-4 border-sapv-gray-light mr-8"
           />

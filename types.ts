@@ -1,178 +1,257 @@
+
+
+// Perfis e Permissões
 export enum UserRole {
-  CONTROLADOR = 'controlador',
-  PRESIDENTE = 'presidente', // Novo papel
-  MESA_DIRETORA = 'mesa_diretora',
-  VEREADOR = 'vereador',
-  SECRETARIA = 'secretaria',
-  PUBLICO = 'publico',
+  PRESIDENTE = 'Presidente',
+  MESA_DIRETORA = 'Mesa Diretora',
+  VEREADOR = 'Vereador',
+  SECRETARIA = 'Secretaria',
+  CONTROLADOR = 'Controlador',
+  PUBLICO = 'Público',
+  ASSESSORIA = 'Assessoria',
 }
 
 export interface UserProfile {
   uid: string;
   name: string; // Nome Parlamentar
-  fullName?: string;
+  fullName?: string; // Nome Completo
   party: string;
-  role: UserRole;
+  photoUrl: string;
   email: string;
-  photoUrl?: string;
-  bio?: string;
-  boardRole?: string; // Papel na Mesa Diretora (VICE, 1ºSEC, etc.)
+  role: UserRole;
+  boardRole?: 'Presidente' | 'Vice-Presidente' | '1º Secretário' | '2º Secretário';
 }
 
+// Configuração da Legislatura
+export interface LegislatureConfig {
+    id: string;
+    cityName: string;
+    totalMembers: number;
+    quorumToOpen: number; // Maioria simples
+    votingQuorum: number; // Quorum para iniciar votação
+    startDate: string;
+    endDate: string;
+}
+
+// Partidos
 export interface Party {
     id: string;
     name: string;
     acronym: string;
 }
 
-export interface LegislatureConfig {
-    totalMembers: number;
-    quorumToOpen: number; // Ex: 1/3 do totalMembers
-    votingQuorum: number; // Ex: 50% + 1
-    startDate: string;
-    endDate: string;
+// Comissões
+export interface CommissionMember {
+    profile: UserProfile;
+    role: 'Presidente' | 'Relator' | 'Membro';
+}
+export interface Commission {
+    id: string;
+    name: string;
+    description: string;
+    members: CommissionMember[];
 }
 
-export enum VotingType {
-    SIMBOLICA = 'Simbólica',
-    NOMINAL = 'Nominal',
+
+// Projetos e Tramitação
+export enum ProjectWorkflowStatus {
+    PROTOCOLADO = 'Protocolado',
+    NAS_COMISSOES = 'Nas Comissões',
+    AGUARDANDO_PARECER = 'Aguardando Parecer',
+    PRONTO_PARA_PAUTA = 'Pronto para Pauta',
+    LIDO_EM_PLENARIO = 'Lido em Plenário',
+    VOTADO = 'Votado',
+    ARQUIVADO = 'Arquivado',
+    PREJUDICADO = 'Prejudicado',
 }
 
-export enum MajorityType {
-    SIMPLES = 'Maioria Simples', // Metade + 1 dos PRESENTES
-    ABSOLUTA = 'Maioria Absoluta', // Metade + 1 do TOTAL de membros
-    QUALIFICADA = 'Maioria Qualificada 2/3', // 2/3 do TOTAL de membros
-    ABSOLUTA_INVERTIDA = 'Maioria Abs. Invertida',
-    DOIS_TERCOS = 'Votação 2/3',
+export enum ProjectPhase {
+    EXPEDIENTE = 'Expediente',
+    ORDEM_DO_DIA = 'Ordem do Dia',
 }
 
-export type ProjectWorkflowStatus = 'Protocolado' | 'Lido em Plenário' | 'Nas Comissões' | 'Aguardando Parecer' | 'Pronto para Pauta' | 'Arquivado' | 'Prejudicado';
-
-export interface Amendment {
-  id: string;
-  parentProjectId: string;
-  title: string;
-  description: string;
-  author: UserProfile;
+export interface TransmittalHistoryEntry {
+    date: string; // ISO
+    event: string;
+    author: string; // Nome de quem realizou a ação
 }
 
 export interface Parecer {
     id: string;
+    date: string; // ISO
     commissionId: string;
     commissionName: string;
-    author: UserProfile; // Relator
+    author: UserProfile;
     content: string;
     status: 'Favorável' | 'Contrário';
-    date: string;
 }
 
-export interface VotingRules {
-  type: VotingType;
-  majority: MajorityType;
+export interface Amendment {
+    id: string;
+    parentProjectId: string;
+    title: string;
+    description: string;
+    author: UserProfile;
 }
 
-export interface TransmittalHistoryEntry {
-  date: string;
-  author: string;
-  event: string;
+export enum VotingType {
+    NOMINAL = 'Nominal',
+    SIMBOLICA = 'Simbólica',
+}
+
+export enum MajorityType {
+    SIMPLES = 'Maioria Simples', // Metade + 1 dos presentes
+    ABSOLUTA = 'Maioria Absoluta', // Metade + 1 do total de membros
+    QUALIFICADA = 'Maioria Qualificada (2/3)', // 2/3 do total de membros
 }
 
 export interface Project {
-  id: string;
-  number?: string;
-  date?: string;
-  title: string;
-  description: string; // Ementa
-  author: UserProfile;
-  proposingInstitution?: string;
-  matterType?: string;
-  fullText?: string;
-  attachments?: { name: string; url: string }[];
-  votingRules: VotingRules;
-  turns?: 'Turno Único' | '2 Turnos' | '3 Turnos';
-  secretVote?: boolean;
-  amendments?: Amendment[];
-  votingStatus: 'pending' | 'approved' | 'rejected' | 'annulled';
-  workflowStatus: ProjectWorkflowStatus;
-  projectPhase?: 'Expediente' | 'Ordem do Dia';
-  assignedCommissionIds?: string[];
-  pareceres?: Parecer[];
-  readInSessionId?: string;
-  votedInSessionId?: string;
-  transmittalHistory?: TransmittalHistoryEntry[];
-  parentProjectId?: string;
-  blockVotedProjectIds?: string[];
+    id: string;
+    number: string;
+    date: string; // ISO
+    title: string;
+    description: string;
+    author: UserProfile;
+    proposingInstitution?: string;
+    matterType: string;
+    workflowStatus: ProjectWorkflowStatus;
+    projectPhase?: ProjectPhase;
+    
+    // Votação
+    votingStatus: 'pending' | 'open' | 'closed' | 'result_published';
+    votingRules: {
+        type: VotingType;
+        majority: MajorityType;
+    };
+    turns?: 'Turno Único' | '2 Turnos' | '3 Turnos';
+    secretVote?: boolean;
+
+    // Tramitação
+    assignedCommissionIds?: string[];
+    transmittalHistory?: TransmittalHistoryEntry[];
+    pareceres?: Parecer[];
+    amendments?: Amendment[];
+    readInSessionId?: string; // ID da sessão em que foi lido
+    votedInSessionId?: string; // ID da sessão em que foi votado
+    parentProjectId?: string; // Para emendas e substitutivos
+    blockVotedProjectIds?: string[]; // Para projetos de votação em bloco
+}
+
+// Sessão Plenária
+export enum SessionStatus {
+    INACTIVE = 'inactive',
+    ACTIVE = 'active',
+    PAUSED = 'paused',
+}
+
+export enum SessionPhase {
+    INICIAL = 'Inicial',
+    EXPEDIENTE = 'Expediente',
+    ORDEM_DO_DIA = 'Ordem do Dia',
+    ENCERRADA = 'Encerrada',
 }
 
 export enum VoteOption {
-  SIM = 'SIM',
-  NAO = 'NÃO',
-  ABS = 'ABS',
+    SIM = 'Sim',
+    NAO = 'Não',
+    ABS = 'Abster-se',
 }
 
-export type Votes = {
-  [vereadorId: string]: VoteOption;
-};
+export type Votes = Record<string, VoteOption>; // { [uid]: VoteOption }
 
 export enum PanelView {
-  OFF = 'off',
-  VOTING = 'voting',
-  SPEAKER = 'speaker',
-  PRESENCE = 'presence',
-  MESSAGE = 'message',
-  READING = 'reading',
+    OFF = 'off',
+    PRESENCE = 'presence',
+    SPEAKER = 'speaker',
+    VOTING = 'voting',
+    MESSAGE = 'message',
+    READING = 'reading',
 }
 
-export interface ChatMessage {
+export interface OperationalChatMessage {
     timestamp: number;
-    user: Pick<UserProfile, 'uid' | 'name' | 'role'>;
+    user: {
+        uid: string;
+        name: string;
+        role: UserRole;
+    };
     message: string;
 }
 
-export interface SessionState {
-  id: string;
-  status: 'inactive' | 'active' | 'finished';
-  phase: 'Inactive' | 'Expediente' | 'Ordem do Dia';
-  panelView: PanelView;
-  panelMessage: string | null;
-  presence: { [vereadorId: string]: boolean };
-  currentProject: Project | null;
-  votingOpen: boolean;
-  votes: Votes;
-  votingResult: string | null;
-  speakerQueue: UserProfile[];
-  currentSpeaker: UserProfile | null;
-  speakerTimerEndTime: number | null;
-  speakerTimerPaused: boolean;
-  speakerHistory: { speaker: UserProfile, duration: number }[];
-  defaultSpeakerDuration: number;
-  interruptionRequest: { from: UserProfile; active: boolean } | null;
-  pointOfOrderRequest: { from: UserProfile; active: boolean } | null;
-  operationalChat: ChatMessage[];
-  microphoneStatus: { [vereadorId: string]: boolean };
-  isSymbolicVoting: boolean;
-  verificationRequest: { from: UserProfile; active: boolean } | null;
+// FIX: Add missing types for older components
+export type SessionType = 'Ordinária' | 'Extraordinária' | 'Solene';
+
+export interface SessionConfig {
+    cityName: string;
+    sessionType: SessionType;
+    legislatureMembers: string[];
 }
 
-export interface SessionHistory extends Omit<SessionState, 'id' | 'status' | 'presence'> {
+// Estado central da sessão
+export interface SessionState {
+    status: SessionStatus;
+    phase: SessionPhase;
+    startTime: number | null;
+    
+    // FIX: Add missing properties for older components
+    pauseTime: number | null;
+    totalPausedDuration: number;
+    sessionType: SessionType;
+    cityName: string;
+    legislatureMembers: string[];
+
+    // Controle de Presença
+    presence: Record<string, boolean>; // { [uid]: isPresent }
+    
+    // Controle do Painel Público
+    panelView: PanelView;
+    panelMessage: string | null;
+
+    // Controle de Votação
+    currentProject: Project | null;
+    votingOpen: boolean;
+    isSymbolicVoting: boolean;
+    votes: Votes;
+    votingResult: string | null; // ex: "Aprovado por Maioria Simples"
+
+    // Controle da Tribuna
+    speakerQueue: UserProfile[];
+    currentSpeaker: UserProfile | null;
+    speakerTimerEndTime: number | null;
+    speakerTimerPaused: boolean;
+    defaultSpeakerDuration: number; // in seconds
+
+    // Requisições
+    interruptionRequest: { from: UserProfile, active: boolean } | null;
+    pointOfOrderRequest: { from: UserProfile, active: boolean } | null;
+    verificationRequest: { from: UserProfile, active: boolean } | null;
+
+    // Microfones
+    microphoneStatus: Record<string, boolean>; // { [uid]: isMicOn }
+
+    // Chat
+    operationalChat: OperationalChatMessage[];
+}
+
+// Histórico
+export interface VotingRecord {
+    projectTitle: string;
+    result: string;
+    votes: Votes;
+}
+
+export interface SessionHistory {
     sessionId: string;
-    date: string;
-    finalPresence: string[];
-    votingRecords: { projectTitle: string, result: string, votes: Votes }[];
+    date: string; // ISO
+    finalPresence: string[]; // array of uids
+    votingRecords: VotingRecord[];
     ataDraftContent?: string;
 }
 
 export interface PublishedAta {
     id: string;
     sessionId: string;
-    date: string;
+    date: string; // ISO
     title: string;
-    content: string; // The formatted, official text of the minutes
-}
-
-export interface Commission {
-    id: string;
-    name: string;
-    description: string;
-    members: { profile: UserProfile, role: 'Presidente' | 'Relator' | 'Membro' }[];
+    content: string;
 }

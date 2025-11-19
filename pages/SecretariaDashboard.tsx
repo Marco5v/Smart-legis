@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { LogOut, FileText, Users, Flag, Settings, BookMarked, Briefcase, MessageSquare, CalendarCheck } from 'lucide-react';
+import { LogOut, FileText, Users, Flag, Settings, BookMarked, Briefcase, CalendarCheck } from 'lucide-react';
 import Button from '../components/common/Button';
 import { useAuth } from '../context/AuthContext';
 

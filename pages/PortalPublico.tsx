@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSession } from '../context/SessionContext';
-import { BookOpen, Users, FileText, Calendar, Vote, CheckSquare, BarChart2, Newspaper, FileBadge, MessageSquare, Shield, Mail, Youtube, Sun, Moon, ZoomIn, ZoomOut, Briefcase, History } from 'lucide-react';
+import { BookOpen, Users, FileText, Calendar, Vote, CheckSquare, BarChart2, Newspaper, FileBadge, Shield, Mail, Youtube, Sun, Moon, ZoomIn, ZoomOut, Briefcase, History } from 'lucide-react';
+import { Project } from '../types';
 
 const AccessibilityControls: React.FC = () => {
     const [isHighContrast, setIsHighContrast] = useState(false);
@@ -58,7 +60,7 @@ const PortalPublico: React.FC = () => {
         </div>
     );
     
-    const TransmittalHistory: React.FC<{ project: typeof projects[0] }> = ({ project }) => (
+    const TransmittalHistory: React.FC<{ project: Project }> = ({ project }) => (
         <div className="mt-4 p-4 bg-gray-100 rounded-md border-l-4 border-blue-500">
             <h4 className="font-semibold text-gray-800 mb-2">Histórico de Tramitação</h4>
             <ul className="space-y-2">
@@ -81,12 +83,12 @@ const PortalPublico: React.FC = () => {
                     background-color: #000 !important;
                     color: #fff !important;
                 }
-                .high-contrast div, .high-contrast header, .high-contrast section, .high-contrast h1, .high-contrast h2, .high-contrast p, .high-contrast button {
+                .high-contrast div, .high-contrast header, .high-contrast section, .high-contrast h1, .high-contrast h2, .high-contrast p, .high-contrast button, .high-contrast main, .high-contrast li, .high-contrast span {
                     background-color: #000 !important;
                     color: #fff !important;
                     border-color: #fff !important;
                 }
-                 .high-contrast a {
+                 .high-contrast a, .high-contrast .text-blue-600 {
                     color: #FFFF00 !important;
                 }
             `}</style>

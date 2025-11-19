@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { LogOut, BarChart3, Users, Vote, FileText } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { useSession } from '../context/SessionContext';
@@ -57,18 +58,19 @@ const AnalyticsDashboard: React.FC = () => {
             });
         });
         
-        // Find top 5 alignments
         const alignments: { members: string, value: number }[] = [];
+        const processedPairs = new Set<string>();
         Object.keys(alignmentMatrix).forEach(uid1 => {
              Object.keys(alignmentMatrix[uid1]).forEach(uid2 => {
-                // Avoid duplicates
-                if (uid1 < uid2) {
+                const pairKey = [uid1, uid2].sort().join('-');
+                if (!processedPairs.has(pairKey)) {
                     const member1 = councilMembers.find(m => m.uid === uid1)?.name || '';
                     const member2 = councilMembers.find(m => m.uid === uid2)?.name || '';
                     alignments.push({
                         members: `${member1.split(' ')[0]} & ${member2.split(' ')[0]}`,
                         value: alignmentMatrix[uid1][uid2],
                     });
+                    processedPairs.add(pairKey);
                 }
             });
         });
@@ -118,9 +120,9 @@ const AnalyticsDashboard: React.FC = () => {
 
                 <Card title="Mapa de Votação (Top 10 Alinhamentos %)">
                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={alignmentData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <BarChart data={alignmentData} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
                            <XAxis type="number" stroke="#8892b0" domain={[0, 100]}/>
-                            <YAxis type="category" dataKey="members" stroke="#8892b0" />
+                            <YAxis type="category" dataKey="members" stroke="#8892b0" width={120}/>
                             <Tooltip contentStyle={{ backgroundColor: '#0a192f', border: '1px solid #495670' }}/>
                              <Bar dataKey="value" name="Alinhamento" fill="#64ffda" />
                         </BarChart>

@@ -1,64 +1,68 @@
-import React, { useEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth, setRegisterPresenceFn } from './context/AuthContext';
-import { SessionProvider, useSession } from './context/SessionContext';
 
-// Pages
+import React from 'react';
+import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { SessionProvider } from './context/SessionContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+
 import LoginPage from './pages/LoginPage';
 import PanelPage from './pages/PanelPage';
 import PortalPublico from './pages/PortalPublico';
-import ControladorDashboard from './pages/ControladorDashboard';
 import PresidenteDashboard from './pages/PresidenteDashboard';
-import VereadorInterface from './pages/VereadorInterface';
 import SecretariaDashboard from './pages/SecretariaDashboard';
+import ControladorDashboard from './pages/ControladorDashboard';
+import VereadorInterface from './pages/VereadorInterface';
 import ComissoesDashboard from './pages/ComissoesDashboard';
 import AnalyticsDashboard from './pages/AnalyticsDashboard';
+import { UserRole } from './types';
 
-// Helper component to handle the circular dependency logic
-const AppContent: React.FC = () => {
-    const { registerPresence } = useSession();
 
-    useEffect(() => {
-        // This function is imported from AuthContext and allows us to provide
-        // the registerPresence function from SessionContext without a circular import.
-        setRegisterPresenceFn(registerPresence);
-    }, [registerPresence]);
+const ProtectedRoute: React.FC<{ allowedRoles: UserRole[] }> = ({ allowedRoles }) => {
+    const { user, loading } = useAuth();
+    if (loading) {
+        // You can return a loading spinner here
+        return <div>Carregando...</div>;
+    }
+    if (!user || !allowedRoles.includes(user.role)) {
+        return <Navigate to="/" replace />;
+    }
+    return <Outlet />;
+};
 
-    // Private Route Wrapper
-    const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-        const { user } = useAuth();
-        return user ? <>{children}</> : <Navigate to="/" />;
-    };
-
-    return (
-        <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<LoginPage />} />
-            <Route path="/panel" element={<PanelPage />} />
-            <Route path="/portal" element={<PortalPublico />} />
-
-            {/* Private Dashboards */}
-            <Route path="/dashboard/controlador" element={<PrivateRoute><ControladorDashboard /></PrivateRoute>} />
-            <Route path="/dashboard/presidente" element={<PrivateRoute><PresidenteDashboard /></PrivateRoute>} />
-            <Route path="/dashboard/vereador" element={<PrivateRoute><VereadorInterface /></PrivateRoute>} />
-            <Route path="/dashboard/secretaria" element={<PrivateRoute><SecretariaDashboard /></PrivateRoute>} />
-            <Route path="/dashboard/comissoes" element={<PrivateRoute><ComissoesDashboard /></PrivateRoute>} />
-            <Route path="/dashboard/analytics" element={<PrivateRoute><AnalyticsDashboard /></PrivateRoute>} />
-
-             {/* Redirect any other path to login */}
-            <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-    );
-}
 
 const App: React.FC = () => {
   return (
     <HashRouter>
-        <SessionProvider>
-            <AuthProvider>
-                <AppContent />
-            </AuthProvider>
-        </SessionProvider>
+      <AuthProvider>
+          <SessionProvider>
+              <Routes>
+                  <Route path="/" element={<LoginPage />} />
+                  <Route path="/panel" element={<PanelPage />} />
+                  <Route path="/portal" element={<PortalPublico />} />
+                  
+                  {/* Protected Routes */}
+                  <Route element={<ProtectedRoute allowedRoles={[UserRole.PRESIDENTE, UserRole.MESA_DIRETORA]} />}>
+                      <Route path="/dashboard/presidente" element={<PresidenteDashboard />} />
+                  </Route>
+                    <Route element={<ProtectedRoute allowedRoles={[UserRole.SECRETARIA]} />}>
+                      <Route path="/dashboard/secretaria" element={<SecretariaDashboard />} />
+                  </Route>
+                  <Route element={<ProtectedRoute allowedRoles={[UserRole.CONTROLADOR]} />}>
+                      <Route path="/dashboard/controlador" element={<ControladorDashboard />} />
+                  </Route>
+                    <Route element={<ProtectedRoute allowedRoles={[UserRole.VEREADOR, UserRole.PRESIDENTE]} />}>
+                      <Route path="/dashboard/vereador" element={<VereadorInterface />} />
+                  </Route>
+                    <Route element={<ProtectedRoute allowedRoles={[UserRole.VEREADOR, UserRole.PRESIDENTE, UserRole.ASSESSORIA]} />}>
+                      <Route path="/dashboard/comissoes" element={<ComissoesDashboard />} />
+                  </Route>
+                    <Route element={<ProtectedRoute allowedRoles={[UserRole.PRESIDENTE, UserRole.SECRETARIA]} />}>
+                      <Route path="/dashboard/analytics" element={<AnalyticsDashboard />} />
+                  </Route>
+
+                  <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+          </SessionProvider>
+      </AuthProvider>
     </HashRouter>
   );
 };

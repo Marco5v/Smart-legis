@@ -1,6 +1,9 @@
+
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from '../../context/SessionContext';
-import { Project, UserProfile, MajorityType, VotingType } from '../../types';
+// FIX: Import ProjectWorkflowStatus for type safety
+import { Project, MajorityType, VotingType, ProjectWorkflowStatus } from '../../types';
 import Button from '../common/Button';
 import { PlusCircle, X, Save } from 'lucide-react';
 
@@ -96,7 +99,6 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({ project, onC
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Simple validation
         if (!formData.authorId || !formData.matterType || !formData.description) {
             alert('Preencha os campos obrigatórios.');
             return;
@@ -113,7 +115,8 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({ project, onC
             author,
             proposingInstitution: formData.proposingInstitution,
             matterType: formData.matterType,
-            workflowStatus: 'Protocolado',
+            // FIX: Use enum member instead of string literal
+            workflowStatus: ProjectWorkflowStatus.PROTOCOLADO,
             votingRules: {
                 type: formData.votingType as VotingType,
                 majority: formData.majorityType as MajorityType,
@@ -126,7 +129,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({ project, onC
         };
 
         if (project) {
-            // updateProject(project.id, projectData); // TODO: Implement update
+            // TODO: updateProject(project.id, projectData);
         } else {
             addProject(projectData);
         }
@@ -184,7 +187,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({ project, onC
                          <div>
                              <label htmlFor="majorityType" className="block text-sm font-medium">Tipo de Votação</label>
                             <select id="majorityType" name="majorityType" value={formData.majorityType} onChange={handleChange} className="mt-1 w-full px-3 py-2 bg-sapv-blue-dark border border-sapv-gray-dark rounded-md">
-                                {Object.values(MajorityType).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                {Object.values(MajorityType).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
                         </div>
                          <div>

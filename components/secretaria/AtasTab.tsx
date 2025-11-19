@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
@@ -17,7 +18,6 @@ export const AtasTab: React.FC = () => {
         setFeedback(''); // Clear feedback on new selection
         setError('');
         
-        // Load draft if exists, otherwise generate new text
         if (session.ataDraftContent) {
             setAtaContent(session.ataDraftContent);
         } else {
@@ -39,7 +39,7 @@ ${session.votingRecords.map(r => ` - ${r.projectTitle}: ${r.result}`).join('\n')
         if (selectedSession && ataContent) {
             saveAtaDraft(selectedSession.sessionId, ataContent);
             setFeedback('Rascunho salvo com sucesso!');
-            setTimeout(() => setFeedback(''), 3000); // Hide feedback after 3s
+            setTimeout(() => setFeedback(''), 3000);
         }
     }
     

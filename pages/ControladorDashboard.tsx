@@ -1,16 +1,18 @@
+
 import React, { useRef, useState, useMemo, useEffect } from 'react';
-import { LogOut, Monitor, Users, Vote, Mic, XCircle, AlertTriangle, Send, Edit, MessageSquare, FileText, ArrowUp, ArrowDown, Save, Upload } from 'lucide-react';
+import { LogOut, Monitor, Users, Vote, Mic, XCircle, AlertTriangle, Send, Edit, FileText, ArrowUp, ArrowDown, Save, Upload } from 'lucide-react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { useSession } from '../context/SessionContext';
 import { useAuth } from '../context/AuthContext';
-import { PanelView, UserProfile, VoteOption, Project } from '../types';
+import { PanelView, VoteOption, Project } from '../types';
 import { OperationalChat } from '../components/common/OperationalChat';
 
 const ControladorDashboard: React.FC = () => {
     const { user, logout } = useAuth();
     const { 
-        session, councilMembers, legislatureConfig, projects,
+        session, councilMembers, 
+        legislatureConfig, projects,
         togglePresence, setPanelView, hideVoting, setPanelMessage, setCurrentProject,
         overrideVote
     } = useSession();
@@ -103,7 +105,6 @@ const ControladorDashboard: React.FC = () => {
 
     const openPanel = () => {
         if (!panelWindow.current || panelWindow.current.closed) {
-            // For HashRouter, the URL needs to be constructed to point to the #/panel route.
             const panelUrl = `${window.location.origin}${window.location.pathname}#/panel`;
             panelWindow.current = window.open(panelUrl, 'SMART_LEGIS_Painel', 'width=1280,height=720,menubar=no,toolbar=no,location=no,status=no');
         } else {
@@ -117,7 +118,10 @@ const ControladorDashboard: React.FC = () => {
     }
 
     const handleSendMessage = () => {
-        setPanelMessage(message);
+        if (message) {
+            setPanelMessage(message);
+            setPanelView(PanelView.MESSAGE);
+        }
     }
     
     const handleOverrideVote = (e: React.FormEvent) => {
@@ -131,7 +135,7 @@ const ControladorDashboard: React.FC = () => {
     
     const presentCount = Object.values(session.presence).filter(p => p).length;
 
-    const PresenceListItem: React.FC<{member: UserProfile}> = ({member}) => {
+    const PresenceListItem: React.FC<{member: typeof councilMembers[0]}> = ({member}) => {
         const isPresent = session.presence[member.uid];
         return (
             <div className={`flex items-center justify-between p-2 rounded ${isPresent ? 'bg-green-900' : 'bg-red-900'} bg-opacity-50`}>
@@ -229,7 +233,7 @@ const ControladorDashboard: React.FC = () => {
                             </select>
                              <select value={overrideVoteValue} onChange={e => setOverrideVoteValue(e.target.value as VoteOption)} className="w-full px-3 py-2 text-sapv-gray-light bg-sapv-blue-dark border border-sapv-gray-dark rounded-md">
                                 <option value="">Selecione o Voto</option>
-                                {Object.values(VoteOption).map(v => <option key={v} value={v}>{v}</option>)}
+                                {Object.values(VoteOption).map((v) => <option key={v} value={v}>{v}</option>)}
                             </select>
                             <Button type="submit" className="w-full" size="sm" disabled={!overrideMember || !overrideVoteValue}>
                                 <Edit size={16} className="mr-2"/> Registrar Voto Manual

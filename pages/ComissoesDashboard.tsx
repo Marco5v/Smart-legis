@@ -1,10 +1,11 @@
+
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSession } from '../context/SessionContext';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { LogOut, CheckCircle, XCircle } from 'lucide-react';
-import { Project, Parecer } from '../types';
+import { Project, Parecer, UserProfile } from '../types';
 
 interface ParecerModalProps {
     project: Project;
@@ -26,7 +27,7 @@ const ParecerModal: React.FC<ParecerModalProps> = ({ project, commissionId, onCl
         const parecer: Omit<Parecer, 'id' | 'date'> = {
             commissionId,
             commissionName: commission.name,
-            author: user,
+            author: user as UserProfile,
             content,
             status,
         };
@@ -70,7 +71,6 @@ const ComissoesDashboard: React.FC = () => {
 
     const myCommissions = useMemo(() => {
         if (!user) return [];
-        // Fix: Access uid via member.profile.uid
         return commissions.filter(c => c.members.some(m => m.profile.uid === user.uid));
     }, [commissions, user]);
 

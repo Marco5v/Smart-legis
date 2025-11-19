@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSession } from '../../context/SessionContext';
 import Card from '../common/Card';
@@ -11,13 +12,11 @@ export const CurrentSessionTab: React.FC = () => {
     const naoVotes = Object.values(session.votes).filter(v => v === VoteOption.NAO).length;
     const absVotes = Object.values(session.votes).filter(v => v === VoteOption.ABS).length;
 
-    // Fix: Derive present member IDs and count from the session.presence object.
     const presentMemberIds = Object.keys(session.presence).filter(id => session.presence[id]);
     const presentMembersCount = presentMemberIds.length;
 
     const presencePercentage = legislatureConfig.totalMembers > 0 ? (presentMembersCount / legislatureConfig.totalMembers) * 100 : 0;
     
-    // Fix: Filter council members based on the derived list of present member IDs.
     const presentMembersList = councilMembers.filter(m => presentMemberIds.includes(m.uid));
     const absentMembersList = councilMembers.filter(m => !presentMemberIds.includes(m.uid));
 
@@ -36,7 +35,6 @@ export const CurrentSessionTab: React.FC = () => {
                         <Users className="mx-auto mb-2 text-sapv-highlight" />
                         <p className="text-sm text-sapv-gray">Presença</p>
                         <p className="text-2xl font-bold">
-                            {/* Fix: Use the calculated present members count. */}
                             {presentMembersCount} / {legislatureConfig.totalMembers}
                         </p>
                          <div className="w-full bg-sapv-gray-dark rounded-full h-2.5 mt-2">

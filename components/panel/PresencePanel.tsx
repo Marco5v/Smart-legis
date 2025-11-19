@@ -1,28 +1,38 @@
+
 import React, { useState, useEffect } from 'react';
 import { UserProfile, UserRole, Votes, VoteOption } from '../../types';
 
-interface PresencePanelProps {
-    councilMembers: UserProfile[];
-    presentMembers: string[];
-    votes?: Votes;
+interface MemberItemProps {
+    member: UserProfile;
+    isPresent: boolean;
+    vote?: VoteOption;
 }
 
-const MemberItem: React.FC<{ member: UserProfile, isPresent: boolean }> = React.memo(({ member, isPresent }) => {
-    // Círculo com contorno vermelho para ausente (fundo preto), círculo verde sólido para presente
+const MemberItem: React.FC<MemberItemProps> = React.memo(({ member, isPresent, vote }) => {
     const presenceCircle = <div className={`w-6 h-6 rounded-full border-2 ${isPresent ? 'bg-green-500 border-green-300' : 'border-red-500 bg-black'}`}></div>;
     
+    const getVoteStyle = () => {
+        if (!vote) return 'text-red-400';
+        switch (vote) {
+            case VoteOption.SIM: return 'text-green-400';
+            case VoteOption.NAO: return 'text-red-500';
+            case VoteOption.ABS: return 'text-yellow-400';
+            default: return 'text-red-400';
+        }
+    }
+
     return (
         <div className="flex items-center text-2xl">
             {presenceCircle}
             <span className="font-bold text-yellow-400 w-24 ml-3 text-left">{member.boardRole || ''}</span>
-            <span className="font-semibold text-red-400 flex-1 text-left">{member.name.toUpperCase()}</span>
-            <span className="font-semibold text-red-400">{member.party}</span>
+            <span className={`font-semibold flex-1 text-left ${getVoteStyle()}`}>{member.name.toUpperCase()}</span>
+            <span className={`font-semibold ${getVoteStyle()}`}>{member.party}</span>
         </div>
     );
 });
 
 
-const PresencePanel: React.FC<PresencePanelProps> = ({ councilMembers, presentMembers, votes = {} }) => {
+const PresencePanel: React.FC<{ councilMembers: UserProfile[], presentMembers: string[], votes?: Votes }> = ({ councilMembers, presentMembers, votes = {} }) => {
     
     const [time, setTime] = useState(new Date());
 
@@ -35,7 +45,7 @@ const PresencePanel: React.FC<PresencePanelProps> = ({ councilMembers, presentMe
     const otherMembers = councilMembers
         .filter(m => m.role !== UserRole.PRESIDENTE)
         .sort((a, b) => {
-            const roleOrder: { [key: string]: number } = {'VICE': 1, '1ºSEC': 2, '2ºSEC': 3};
+            const roleOrder: { [key: string]: number } = {'Vice-Presidente': 1, '1º Secretário': 2, '2º Secretário': 3};
             const roleA = a.boardRole ? roleOrder[a.boardRole] || 99 : 99;
             const roleB = b.boardRole ? roleOrder[b.boardRole] || 99 : 99;
             if (roleA !== roleB) return roleA - roleB;
@@ -57,7 +67,7 @@ const PresencePanel: React.FC<PresencePanelProps> = ({ councilMembers, presentMe
     return (
         <div className="w-full h-full bg-black text-white p-4 flex flex-col font-sans">
             <header className="w-full bg-blue-800 text-center py-2 border-b-2 border-yellow-400">
-                <h1 className="text-4xl font-black tracking-wider">CÂMARA MUNICIPAL DE ALHANDRA</h1>
+                <h1 className="text-4xl font-black tracking-wider">CÂMARA MUNICIPAL DE EXEMPLO</h1>
             </header>
 
             <main className="flex-grow flex gap-4 py-4 px-2">
@@ -73,10 +83,10 @@ const PresencePanel: React.FC<PresencePanelProps> = ({ councilMembers, presentMe
 
                     <div className="flex-grow grid grid-cols-2 gap-x-12 gap-y-3 content-start">
                         <div className="space-y-3">
-                            {firstColumn.map(m => <MemberItem key={m.uid} member={m} isPresent={presentMembers.includes(m.uid)} />)}
+                            {firstColumn.map(m => <MemberItem key={m.uid} member={m} isPresent={presentMembers.includes(m.uid)} vote={votes[m.uid]} />)}
                         </div>
                          <div className="space-y-3">
-                            {secondColumn.map(m => <MemberItem key={m.uid} member={m} isPresent={presentMembers.includes(m.uid)} />)}
+                            {secondColumn.map(m => <MemberItem key={m.uid} member={m} isPresent={presentMembers.includes(m.uid)} vote={votes[m.uid]} />)}
                         </div>
                     </div>
                 </div>
@@ -120,7 +130,7 @@ const PresencePanel: React.FC<PresencePanelProps> = ({ councilMembers, presentMe
             </main>
 
             <footer className="w-full bg-gray-900 text-yellow-300 py-2 flex justify-between items-center px-6 border-t-2 border-gray-700">
-                 <h2 className="text-xl font-bold">808ª SESSÃO ORDINÁRIA DO 2º PERÍODO LEGISLATIVO DE 2025</h2>
+                 <h2 className="text-xl font-bold">SESSÃO ORDINÁRIA</h2>
                  <span className="text-lg font-mono">{new Date().toLocaleDateString('pt-BR')}</span>
             </footer>
         </div>

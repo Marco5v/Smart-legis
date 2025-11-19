@@ -1,5 +1,5 @@
 {
-  "name": "SMART LEGIS- Sistema de Votação",
-  "description": "Sistema integrado para gerenciamento de sessões plenárias, votação eletrônica, e transparência legislativa.",
+  "name": "Painel Eletrônico Legislativo",
+  "description": "Sistema para controle de presença e status de sessões plenárias.",
   "requestFramePermissions": []
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from '../../context/SessionContext';
+// FIX: Import missing types
 import { Project, Amendment } from '../../types';
 import Button from '../common/Button';
 import { PlusCircle, X, Edit, Trash2, CheckCircle } from 'lucide-react';
@@ -10,6 +11,7 @@ interface ProjectAmendmentsModalProps {
 }
 
 export const ProjectAmendmentsModal: React.FC<ProjectAmendmentsModalProps> = ({ project, onClose }) => {
+  // FIX: Access new methods from context
   const { councilMembers, addAmendment, updateAmendment, deleteAmendment } = useSession();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
