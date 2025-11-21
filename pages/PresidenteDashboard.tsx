@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 // FIX: Import SessionPhase for type safety
 import { Project, PanelView, VotingType, MajorityType, UserProfile, ProjectWorkflowStatus, SessionPhase } from '../types';
 import { OperationalChat } from '../components/common/OperationalChat';
+import Tabs from '../components/common/Tabs';
 
 type ProjectWithChildren = Project & { children: ProjectWithChildren[] };
 
@@ -81,8 +82,8 @@ const PresidenteDashboard: React.FC = () => {
     };
 
     const projetosPauta = useMemo(() => projects.filter(p => p.workflowStatus === 'Pronto para Pauta'), [projects]);
-    const projetosExpedienteOriginal = useMemo(() => buildHierarchy(projects.filter(p => p.projectPhase === 'Expediente')), [projetosPauta]);
-    const projetosOrdemDoDiaOriginal = useMemo(() => buildHierarchy(projects.filter(p => p.projectPhase === 'Ordem do Dia')), [projetosPauta]);
+    const projetosExpedienteOriginal = useMemo(() => buildHierarchy(projects.filter(p => p.projectPhase === 'Expediente')), [projects]);
+    const projetosOrdemDoDiaOriginal = useMemo(() => buildHierarchy(projects.filter(p => p.projectPhase === 'Ordem do Dia')), [projects]);
     
     const [expedienteOrdenado, setExpedienteOrdenado] = useState<ProjectWithChildren[]>([]);
     const [ordemDoDiaOrdenada, setOrdemDoDiaOrdenada] = useState<ProjectWithChildren[]>([]);
@@ -297,7 +298,8 @@ const PresidenteDashboard: React.FC = () => {
                     <Card title="Comandos da Sessão">
                         <div className="flex gap-4">
                             {session.status === 'inactive' ? (
-                                <Button onClick={startSession} disabled={!quorumMet} size="lg" className="flex-1 py-4 text-xl">
+                                // FIX: Pass user name to startSession. It expects a userName for logging.
+                                <Button onClick={() => user && startSession(user.name)} disabled={!quorumMet} size="lg" className="flex-1 py-4 text-xl">
                                     <Play size={24} className="mr-3" /> Iniciar Sessão Local ({presentCount}/{legislatureConfig.totalMembers})
                                 </Button>
                             ) : (
@@ -305,7 +307,8 @@ const PresidenteDashboard: React.FC = () => {
                                     {/* FIX: Use enum members for setting phase */}
                                     <Button onClick={() => setPhase(SessionPhase.EXPEDIENTE)} variant={session.phase === SessionPhase.EXPEDIENTE ? 'primary' : 'secondary'}>Iniciar Expediente</Button>
                                     <Button onClick={() => setPhase(SessionPhase.ORDEM_DO_DIA)} variant={session.phase === SessionPhase.ORDEM_DO_DIA ? 'primary' : 'secondary'}>Iniciar Ordem do Dia</Button>
-                                    <Button onClick={endSession} variant="danger" size="lg" className="flex-1 py-4 text-xl">
+                                    {/* FIX: Pass user name to endSession. It expects a userName for logging. */}
+                                    <Button onClick={() => user && endSession(user.name)} variant="danger" size="lg" className="flex-1 py-4 text-xl">
                                         <XCircle size={24} className="mr-3" /> Encerrar e Sincronizar
                                     </Button>
                                 </>
@@ -415,11 +418,12 @@ const PresidenteDashboard: React.FC = () => {
                 
                 <div className="lg:col-span-1 space-y-6">
                      <Card title="Pauta da Sessão (Arraste para Reordenar)">
-                        <div className="flex border-b border-sapv-gray-dark mb-2">
-                            <button onClick={() => setPautaTab('Expediente')} className={`px-4 py-2 text-sm font-semibold ${pautaTab === 'Expediente' ? 'border-b-2 border-sapv-highlight text-sapv-highlight' : 'text-sapv-gray'}`}>Expediente</button>
-                            <button onClick={() => setPautaTab('Ordem do Dia')} className={`px-4 py-2 text-sm font-semibold ${pautaTab === 'Ordem do Dia' ? 'border-b-2 border-sapv-highlight text-sapv-highlight' : 'text-sapv-gray'}`}>Ordem do Dia</button>
-                        </div>
-                        <div className="flex justify-end items-center gap-2 mb-4 border-b border-sapv-gray-dark pb-2">
+                        <Tabs 
+                            tabs={['Expediente', 'Ordem do Dia']}
+                            activeTab={pautaTab}
+                            setActiveTab={(tab) => setPautaTab(tab as 'Expediente' | 'Ordem do Dia')}
+                        />
+                        <div className="flex justify-end items-center gap-2 my-4 border-b border-sapv-gray-dark pb-2">
                             {feedback && <span className="text-xs text-green-400 mr-auto transition-opacity duration-300">{feedback}</span>}
                             <Button size="sm" variant="secondary" onClick={handleSaveOrder}><Save size={14} className="mr-1"/> Salvar Ordem</Button>
                             <Button size="sm" variant="secondary" onClick={handleLoadOrder}><Upload size={14} className="mr-1"/> Carregar Ordem</Button>

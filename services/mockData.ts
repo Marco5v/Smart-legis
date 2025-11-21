@@ -1,4 +1,5 @@
 
+
 import { UserProfile, UserRole } from '../types';
 
 export const MOCK_USERS: UserProfile[] = [
@@ -126,5 +127,13 @@ export const MOCK_USERS: UserProfile[] = [
     photoUrl: 'https://i.pravatar.cc/150?u=publico-1',
     email: 'publico@sapv.gov',
     role: UserRole.PUBLICO,
+  },
+  {
+    uid: 'suporte-root',
+    name: 'Suporte Técnico',
+    party: '',
+    photoUrl: 'https://i.pravatar.cc/150?u=suporte-root',
+    email: 'root@sapv.gov',
+    role: UserRole.SUPORTE,
   }
 ];

@@ -4,6 +4,14 @@ import { useSession } from '../../context/SessionContext';
 import { VoteOption, UserProfile } from '../../types';
 import Clock from './Clock';
 
+// Nota sobre a Persistência de Votos:
+// A garantia de que os votos não sejam perdidos ao recarregar a página é tratada
+// de forma centralizada no `SessionContext.tsx`. Todo o estado da sessão, incluindo
+// o objeto `votes`, é salvo automaticamente no localStorage do navegador sempre que
+// uma alteração ocorre (como ao registrar um voto). Ao recarregar a aplicação,
+// esse estado é restaurado. Este componente (`VotingPanel`) apenas exibe o
+// estado persistido fornecido pelo contexto, garantindo a integridade dos dados.
+
 const VotingPanel: React.FC = () => {
   const { session, councilMembers, legislatureConfig } = useSession();
   
@@ -43,15 +51,12 @@ const VotingPanel: React.FC = () => {
         {councilMembers.map(member => {
           const status = getVoteStatus(member);
           return (
-            <div key={member.uid} className={`rounded-lg p-3 text-center flex flex-col items-center justify-between shadow-2xl transition-all duration-300 ${status.style}`}>
+            <div key={member.uid} className={`rounded-lg p-3 text-center flex flex-col justify-between shadow-2xl transition-all duration-300 h-full ${status.style}`}>
                 <div className="flex-grow flex flex-col items-center justify-center">
-                    <img 
-                        src={member.photoUrl} 
-                        alt={member.name}
-                        className={`w-28 h-28 rounded-full mb-3 border-4 ${presence[member.uid] ? 'border-white' : 'border-sapv-gray-dark filter grayscale'}`}
-                    />
-                    <p className="font-bold text-xl leading-tight">{member.name}</p>
-                    <p className="text-sm text-sapv-gray">{member.party}</p>
+                    <p className="font-bold text-xl leading-tight text-transparent bg-clip-text bg-gradient-to-r from-sapv-gray-light to-sapv-highlight">
+                        {member.name}
+                    </p>
+                    <p className="text-sm text-sapv-gray mt-1">{member.party}</p>
                 </div>
                  <p className="font-black text-2xl mt-3 tracking-widest">{status.label}</p>
             </div>

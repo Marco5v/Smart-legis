@@ -53,7 +53,7 @@ const SpeakerPanel: React.FC<SpeakerPanelProps> = React.memo(({ currentSpeaker, 
          <img 
             src={currentSpeaker.photoUrl}
             alt={currentSpeaker.name}
-            className="w-48 h-48 rounded-full border-8 border-sapv-gray-light mb-8 shadow-2xl"
+            className="w-48 h-48 rounded-full border-4 border-sapv-highlight mb-8 shadow-2xl highlight-pulse-animate"
           />
         <div>
             <h1 className="text-8xl font-black tracking-wide">

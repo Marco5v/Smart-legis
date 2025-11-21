@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useCallback, useState } from 'react';
 import { LogOut, Mic, Check, X, Minus, AlertOctagon, HelpCircle, FileText, Vote, Briefcase, BookOpen, Search } from 'lucide-react';
 import Card from '../components/common/Card';
@@ -122,8 +123,9 @@ const VereadorInterface: React.FC = () => {
 
     const handleVote = useCallback((vote: VoteOption) => {
         if (!session.votingOpen || myVote) return;
-        castVote(user.uid, vote);
-    }, [session.votingOpen, myVote, castVote, user.uid]);
+        // FIX: Pass voterName for logging purposes.
+        castVote(user.uid, vote, user.name);
+    }, [session.votingOpen, myVote, castVote, user.uid, user.name]);
 
     const handleRequestToSpeak = useCallback(() => {
         if (isQueued) return;

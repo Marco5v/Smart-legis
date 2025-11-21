@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { SessionProvider } from './context/SessionContext';
@@ -13,6 +14,7 @@ import ControladorDashboard from './pages/ControladorDashboard';
 import VereadorInterface from './pages/VereadorInterface';
 import ComissoesDashboard from './pages/ComissoesDashboard';
 import AnalyticsDashboard from './pages/AnalyticsDashboard';
+import SupportDashboard from './pages/SupportDashboard';
 import { UserRole } from './types';
 
 
@@ -57,6 +59,9 @@ const App: React.FC = () => {
                   </Route>
                     <Route element={<ProtectedRoute allowedRoles={[UserRole.PRESIDENTE, UserRole.SECRETARIA]} />}>
                       <Route path="/dashboard/analytics" element={<AnalyticsDashboard />} />
+                  </Route>
+                  <Route element={<ProtectedRoute allowedRoles={[UserRole.SUPORTE]} />}>
+                      <Route path="/dashboard/support" element={<SupportDashboard />} />
                   </Route>
 
                   <Route path="*" element={<Navigate to="/" />} />

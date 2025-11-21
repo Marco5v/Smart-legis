@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/common/Button';
@@ -92,7 +93,8 @@ const LoginPage: React.FC = () => {
                 <li>controlador@sapv.gov (Operador)</li>
                 <li>secretaria@sapv.gov</li>
                 <li>adriano.ferreira@sapv.gov (Vereador)</li>
-                 <li>publico@sapv.gov</li>
+                <li>publico@sapv.gov</li>
+                <li>root@sapv.gov (Suporte)</li>
             </ul>
         </div>
       </div>

@@ -1,5 +1,3 @@
-
-
 // Perfis e Permissões
 export enum UserRole {
   PRESIDENTE = 'Presidente',
@@ -9,6 +7,7 @@ export enum UserRole {
   CONTROLADOR = 'Controlador',
   PUBLICO = 'Público',
   ASSESSORIA = 'Assessoria',
+  SUPORTE = 'Suporte',
 }
 
 export interface UserProfile {
@@ -254,4 +253,22 @@ export interface PublishedAta {
     date: string; // ISO
     title: string;
     content: string;
+}
+
+// Suporte e Auditoria
+export interface SystemLog {
+  id: string;
+  timestamp: number;
+  action: string; // ex: "LOGIN", "VOTO_REGISTRADO", "SESSAO_INICIADA"
+  user: string; // Nome do usuário que realizou a ação
+  details?: string;
+}
+
+export interface DeviceStatus {
+  uid: string; // ID do vereador
+  memberName: string;
+  status: 'online' | 'offline' | 'unstable';
+  batteryLevel: number;
+  lastPing: number; // timestamp
+  ipAddress: string;
 }

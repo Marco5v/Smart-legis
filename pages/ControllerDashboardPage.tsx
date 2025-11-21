@@ -3,6 +3,8 @@ import { useSession } from '../context/SessionContext';
 import { MOCK_USERS } from '../services/mockData';
 import { SessionConfig, SessionType, UserProfile } from '../types';
 import { Play, Pause, Square, Power, Settings, Save, ListChecks, Users } from 'lucide-react';
+// FIX: Import useAuth to get the current user for logging actions.
+import { useAuth } from '../context/AuthContext';
 
 // --- Componente para o Setup da Sessão ---
 const SetupForm: React.FC<{ onStart: (config: SessionConfig) => void }> = ({ onStart }) => {
@@ -83,6 +85,8 @@ const SetupForm: React.FC<{ onStart: (config: SessionConfig) => void }> = ({ onS
 
 // --- Componente para a Operação da Sessão ---
 const OperationPanel: React.FC = () => {
+    // FIX: Get current user to pass to endSession for logging.
+    const { user } = useAuth();
     const { session, councilMembers, togglePresence, pauseSession, resumeSession, endSession } = useSession();
     
     const activeMembers = councilMembers.filter(m => session.legislatureMembers.includes(m.uid));
@@ -124,7 +128,8 @@ const OperationPanel: React.FC = () => {
                                 <Play size={20} /> Retomar Sessão
                             </button>
                         )}
-                        <button onClick={endSession} className="w-full flex items-center justify-center gap-2 px-4 py-3 font-semibold rounded-md text-white bg-red-600 hover:bg-red-700">
+                        {/* FIX: Pass user name to endSession. It expects a userName for logging. */}
+                        <button onClick={() => user && endSession(user.name)} className="w-full flex items-center justify-center gap-2 px-4 py-3 font-semibold rounded-md text-white bg-red-600 hover:bg-red-700">
                             <Square size={20} /> Encerrar Sessão
                         </button>
                     </div>
@@ -143,12 +148,17 @@ const OperationPanel: React.FC = () => {
 };
 
 const ControllerDashboardPage: React.FC = () => {
+    // FIX: Get current user to pass to startSession for logging.
+    const { user } = useAuth();
     const { session, setupSession, startSession } = useSession();
 
     const handleStartSession = useCallback((config: SessionConfig) => {
         setupSession(config);
-        startSession();
-    }, [setupSession, startSession]);
+        // FIX: startSession expects a userName for logging.
+        if (user) {
+            startSession(user.name);
+        }
+    }, [setupSession, startSession, user]);
     
     return (
         <div className="min-h-screen bg-white text-black p-4 md:p-8">

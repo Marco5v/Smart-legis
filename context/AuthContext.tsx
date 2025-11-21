@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { UserProfile, UserRole } from '../types';
 import { MOCK_USERS } from '../services/mockData';
@@ -14,8 +15,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // A little hack to get the registerPresence function without creating a circular dependency
-let registerPresenceFn: (uid: string) => void = () => {};
-export const setRegisterPresenceFn = (fn: (uid: string) => void) => {
+// FIX: Update signature to accept userName for logging purposes.
+let registerPresenceFn: (uid: string, userName: string) => void = () => {};
+export const setRegisterPresenceFn = (fn: (uid: string, userName: string) => void) => {
     registerPresenceFn = fn;
 };
 
@@ -34,8 +36,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setUser(foundUser);
             
             // Register presence if user is a council member
-            if (foundUser.role === UserRole.VEREADOR) {
-                registerPresenceFn(foundUser.uid);
+            // FIX: Pass user name to registerPresenceFn for logging. Also, register presence for the President.
+            if (foundUser.role === UserRole.VEREADOR || foundUser.role === UserRole.PRESIDENTE) {
+                registerPresenceFn(foundUser.uid, foundUser.name);
             }
     
             switch (foundUser.role) {
@@ -59,6 +62,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 break;
               case UserRole.PUBLICO:
                 navigate('/portal');
+                break;
+              case UserRole.SUPORTE:
+                navigate('/dashboard/support');
                 break;
               default:
                 navigate('/');

@@ -1,9 +1,8 @@
-
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
 import { 
     SessionState, UserProfile, VoteOption, Project, SessionStatus, PanelView,
-    LegislatureConfig, Party, Commission, SessionHistory, PublishedAta, Parecer, Amendment, SessionPhase, SessionConfig, SessionType, UserRole
+    LegislatureConfig, Party, Commission, SessionHistory, PublishedAta, Parecer, 
+    Amendment, SessionPhase, SessionConfig, SessionType, UserRole, SystemLog
 } from '../types';
 import { MOCK_USERS } from '../services/mockData';
 import { 
@@ -53,6 +52,7 @@ interface DataState {
     projects: Project[];
     sessionHistory: SessionHistory[];
     publishedAtas: PublishedAta[];
+    systemLogs: SystemLog[];
 }
 
 const initialDataState: DataState = {
@@ -62,33 +62,36 @@ const initialDataState: DataState = {
     projects: MOCK_PROJECTS,
     sessionHistory: MOCK_SESSION_HISTORY,
     publishedAtas: [],
+    systemLogs: [],
 };
 
 
 interface SessionContextType {
   session: SessionState;
   councilMembers: UserProfile[];
+  allUsers: UserProfile[]; // For support panel
   
   // Data from DataState
+  data: DataState; // For support panel
   legislatureConfig: LegislatureConfig;
   parties: Party[];
   commissions: Commission[];
   projects: Project[];
   sessionHistory: SessionHistory[];
   publishedAtas: PublishedAta[];
+  systemLogs: SystemLog[];
   
   // Session Control
-  startSession: () => void;
-  endSession: () => void;
+  startSession: (userName: string) => void;
+  endSession: (userName: string) => void;
   setPhase: (phase: SessionPhase) => void;
-  // FIX: Add missing functions for older components
   setupSession: (config: SessionConfig) => void;
   pauseSession: () => void;
   resumeSession: () => void;
   
   // Presence
   togglePresence: (uid: string) => void;
-  registerPresence: (uid: string) => void;
+  registerPresence: (uid: string, userName: string) => void;
 
   // Panel Control
   setPanelView: (view: PanelView) => void;
@@ -98,8 +101,8 @@ interface SessionContextType {
   // Voting Control
   setCurrentProject: (project: Project | null) => void;
   setVotingStatus: (isOpen: boolean) => void;
-  castVote: (uid: string, vote: VoteOption) => void;
-  overrideVote: (uid: string, vote: VoteOption) => void;
+  castVote: (uid: string, vote: VoteOption, voterName: string) => void;
+  overrideVote: (uid: string, vote: VoteOption, adminName: string) => void;
   calculateResult: (presidentName: string) => void;
   restartVoting: () => void;
   annulVoting: () => void;
@@ -138,6 +141,14 @@ interface SessionContextType {
   addParecer: (projectId: string, parecerData: Omit<Parecer, 'id' | 'date'>) => void;
   saveAtaDraft: (sessionId: string, content: string) => void;
   publishAta: (ataData: Omit<PublishedAta, 'id'>) => void;
+
+  // Support/SuperAdmin Functions
+  resetSystem: () => void;
+  updateLegislatureConfig: (config: Partial<LegislatureConfig>) => void;
+  forceLogout: (uid: string, adminName: string) => void;
+  exportSystemData: () => string;
+  importSystemData: (jsonData: string, adminName: string) => Promise<void>;
+  adminFixVote: (uid: string, vote: VoteOption, adminName: string) => void;
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
@@ -177,8 +188,19 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const councilMembers = MOCK_USERS.filter(u => u.role === 'Vereador' || u.role === 'Presidente');
 
-  // Placeholder implementations
-  const startSession = useCallback(() => {
+  const addLog = useCallback((action: string, user: string, details?: string) => {
+    const newLog: SystemLog = {
+      id: `log-${Date.now()}`,
+      timestamp: Date.now(),
+      action,
+      user,
+      details,
+    };
+    setData(d => ({...d, systemLogs: [...d.systemLogs, newLog]}));
+  }, []);
+
+  const startSession = useCallback((userName: string) => {
+    addLog('SESSAO_INICIADA', userName);
     setSession(s => {
         const membersToInclude = s.legislatureMembers.length > 0 ? s.legislatureMembers : councilMembers.map(m => m.uid);
         const initialPresence = membersToInclude.reduce((acc, uid) => ({...acc, [uid]: false}), {});
@@ -192,10 +214,10 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
             pauseTime: null
         };
     });
-  }, [councilMembers]);
+  }, [councilMembers, addLog]);
 
-  const endSession = useCallback(() => {
-      // Logic to save session history would go here
+  const endSession = useCallback((userName: string) => {
+      addLog('SESSAO_ENCERRADA', userName);
       const newHistoryEntry: SessionHistory = {
           sessionId: `sess-${session.startTime}`,
           date: new Date(session.startTime!).toISOString(),
@@ -215,11 +237,10 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
       }));
 
       setSession(initialSessionState);
-  }, [session.startTime, session.presence, data.projects]);
+  }, [session.startTime, session.presence, data.projects, addLog]);
   
   const setPhase = useCallback((phase: SessionPhase) => setSession(s => ({...s, phase})), []);
 
-  // FIX: Implement missing functions for older components
   const setupSession = useCallback((config: SessionConfig) => {
     setSession(s => ({
         ...s,
@@ -240,11 +261,7 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
   const pauseSession = useCallback(() => {
     setSession(s => {
         if (s.status !== SessionStatus.ACTIVE) return s;
-        return {
-            ...s,
-            status: SessionStatus.PAUSED,
-            pauseTime: Date.now()
-        };
+        return { ...s, status: SessionStatus.PAUSED, pauseTime: Date.now() };
     });
   }, []);
 
@@ -252,22 +269,18 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
     setSession(s => {
         if (s.status !== SessionStatus.PAUSED || !s.pauseTime) return s;
         const pausedDuration = Date.now() - s.pauseTime;
-        return {
-            ...s,
-            status: SessionStatus.ACTIVE,
-            pauseTime: null,
-            totalPausedDuration: s.totalPausedDuration + pausedDuration
-        };
+        return { ...s, status: SessionStatus.ACTIVE, pauseTime: null, totalPausedDuration: s.totalPausedDuration + pausedDuration };
     });
   }, []);
   
   const togglePresence = useCallback((uid: string) => setSession(s => ({...s, presence: {...s.presence, [uid]: !s.presence[uid]}})), []);
   
-  const registerPresence = useCallback((uid: string) => {
+  const registerPresence = useCallback((uid: string, userName: string) => {
     if (session.status === SessionStatus.ACTIVE) {
         setSession(s => ({...s, presence: {...s.presence, [uid]: true}}));
+        addLog('PRESENCA_REGISTRADA', userName);
     }
-  }, [session.status]);
+  }, [session.status, addLog]);
 
   useEffect(() => {
     setRegisterPresenceFn(registerPresence);
@@ -283,19 +296,23 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const setVotingStatus = useCallback((isOpen: boolean) => setSession(s => ({...s, votingOpen: isOpen, panelView: isOpen ? PanelView.VOTING : s.panelView})), []);
 
-  const castVote = useCallback((uid: string, vote: VoteOption) => {
+  const castVote = useCallback((uid: string, vote: VoteOption, voterName: string) => {
     if(session.votingOpen) {
+        addLog('VOTO_REGISTRADO', voterName, `Voto: ${vote} para projeto ${session.currentProject?.title || 'desconhecido'}`);
         setSession(s => ({...s, votes: {...s.votes, [uid]: vote}}));
     }
-  }, [session.votingOpen]);
+  }, [session.votingOpen, session.currentProject, addLog]);
 
-  const overrideVote = useCallback((uid: string, vote: VoteOption) => setSession(s => ({...s, votes: {...s.votes, [uid]: vote}})), []);
+  const overrideVote = useCallback((uid: string, vote: VoteOption, adminName: string) => {
+    const memberName = councilMembers.find(m => m.uid === uid)?.name || uid;
+    addLog('VOTO_SOBRESCRITO', adminName, `Vereador: ${memberName}, Voto: ${vote}`);
+    setSession(s => ({...s, votes: {...s.votes, [uid]: vote}}))
+  }, [addLog, councilMembers]);
   
   const calculateResult = useCallback((presidentName: string) => {
-      // Mock implementation
+      addLog('VOTACAO_ENCERRADA', presidentName, `Projeto: ${session.currentProject?.title}`);
       setSession(s => ({...s, votingOpen: false, votingResult: "APROVADO POR MAIORIA SIMPLES", panelView: PanelView.VOTING}));
-      // In a real scenario, this would check majority types, quorum etc.
-  }, []);
+  }, [addLog, session.currentProject]);
 
   const restartVoting = useCallback(() => setSession(s => ({...s, votes: {}, votingResult: null, votingOpen: false})), []);
   const annulVoting = useCallback(() => setSession(s => ({...s, votes: {}, votingResult: "VOTAÇÃO ANULADA", votingOpen: false})), []);
@@ -385,10 +402,57 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
       setData(d => ({...d, publishedAtas: [newAta, ...d.publishedAtas]}));
   }, []);
 
+  // Support Functions
+  const resetSystem = useCallback(() => {
+    if (window.confirm('ATENÇÃO: Esta ação irá apagar TODOS os dados da sessão e recarregar a aplicação para o estado inicial. Deseja continuar?')) {
+        addLog('SISTEMA_RESETADO', 'Suporte', 'Todos os dados foram apagados.');
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+        localStorage.removeItem(DATA_STORAGE_KEY);
+        window.location.reload();
+    }
+  }, [addLog]);
+
+  const updateLegislatureConfig = useCallback((config: Partial<LegislatureConfig>) => {
+    setData(d => ({ ...d, legislatureConfig: { ...d.legislatureConfig, ...config } }));
+  }, []);
+
+  const forceLogout = useCallback((uid: string, adminName: string) => {
+    const memberName = councilMembers.find(m => m.uid === uid)?.name || uid;
+    addLog('LOGOUT_FORCADO', adminName, `Usuário: ${memberName}`);
+    setSession(s => ({...s, presence: {...s.presence, [uid]: false}}));
+  }, [addLog, councilMembers]);
+
+  const exportSystemData = useCallback(() => {
+    addLog('BACKUP_EXPORTADO', 'Suporte');
+    return JSON.stringify({ sessionState: session, dataState: data }, null, 2);
+  }, [session, data, addLog]);
+
+  const importSystemData = useCallback(async (jsonData: string, adminName: string) => {
+    try {
+        const parsedData = JSON.parse(jsonData);
+        if (parsedData.sessionState && parsedData.dataState) {
+            setSession(parsedData.sessionState);
+            setData(parsedData.dataState);
+            addLog('SISTEMA_RESTAURADO', adminName, 'Dados importados de um backup.');
+        } else {
+            throw new Error("Formato do JSON de backup inválido.");
+        }
+    } catch (error) {
+        console.error("Falha ao importar dados:", error);
+        throw error; // Re-throw para ser tratado na UI
+    }
+  }, [addLog]);
+
+  const adminFixVote = useCallback((uid: string, vote: VoteOption, adminName: string) => {
+    const memberName = councilMembers.find(m => m.uid === uid)?.name || uid;
+    addLog('VOTO_CORRIGIDO', adminName, `Vereador: ${memberName}, Voto: ${vote}`);
+    setSession(s => ({...s, votes: {...s.votes, [uid]: vote}}));
+  }, [addLog, councilMembers]);
+
 
   return (
     <SessionContext.Provider value={{
-        session, councilMembers, ...data,
+        session, councilMembers, allUsers: MOCK_USERS, data, ...data,
         startSession, endSession, setPhase,
         setupSession, pauseSession, resumeSession,
         togglePresence, registerPresence,
@@ -399,6 +463,7 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
         toggleMicrophone, muteAllMicrophones,
         sendOperationalChatMessage,
         addProject, addCommission, addAmendment, updateAmendment, deleteAmendment, addParecer, saveAtaDraft, publishAta,
+        resetSystem, updateLegislatureConfig, forceLogout, exportSystemData, importSystemData, adminFixVote
     }}>
       {children}
     </SessionContext.Provider>

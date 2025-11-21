@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { LogOut, Monitor, Users, Vote, Mic, XCircle, AlertTriangle, Send, Edit, FileText, ArrowUp, ArrowDown, Save, Upload } from 'lucide-react';
 import Card from '../components/common/Card';
@@ -7,6 +8,7 @@ import { useSession } from '../context/SessionContext';
 import { useAuth } from '../context/AuthContext';
 import { PanelView, VoteOption, Project } from '../types';
 import { OperationalChat } from '../components/common/OperationalChat';
+import Tabs from '../components/common/Tabs';
 
 const ControladorDashboard: React.FC = () => {
     const { user, logout } = useAuth();
@@ -126,8 +128,9 @@ const ControladorDashboard: React.FC = () => {
     
     const handleOverrideVote = (e: React.FormEvent) => {
         e.preventDefault();
-        if(overrideMember && overrideVoteValue) {
-            overrideVote(overrideMember, overrideVoteValue);
+        if(overrideMember && overrideVoteValue && user) {
+            // FIX: Pass current user's name as adminName for logging.
+            overrideVote(overrideMember, overrideVoteValue, user.name);
             setOverrideMember('');
             setOverrideVoteValue('');
         }
@@ -163,11 +166,12 @@ const ControladorDashboard: React.FC = () => {
                 {/* Coluna 1: Pauta e Presença */}
                 <div className="lg:col-span-1 space-y-6">
                     <Card title="Pauta da Sessão">
-                         <div className="flex border-b border-sapv-gray-dark mb-2">
-                            <button onClick={() => setPautaTab('Expediente')} className={`px-4 py-2 text-sm font-semibold ${pautaTab === 'Expediente' ? 'border-b-2 border-sapv-highlight text-sapv-highlight' : 'text-sapv-gray'}`}>Expediente</button>
-                            <button onClick={() => setPautaTab('Ordem do Dia')} className={`px-4 py-2 text-sm font-semibold ${pautaTab === 'Ordem do Dia' ? 'border-b-2 border-sapv-highlight text-sapv-highlight' : 'text-sapv-gray'}`}>Ordem do Dia</button>
-                        </div>
-                        <div className="flex justify-end items-center gap-2 mb-2 border-b border-sapv-gray-dark pb-2">
+                         <Tabs 
+                            tabs={['Expediente', 'Ordem do Dia']}
+                            activeTab={pautaTab}
+                            setActiveTab={(tab) => setPautaTab(tab as 'Expediente' | 'Ordem do Dia')}
+                         />
+                        <div className="flex justify-end items-center gap-2 mt-4 mb-2 border-b border-sapv-gray-dark pb-2">
                             {feedback && <span className="text-xs text-green-400 mr-auto">{feedback}</span>}
                             <Button size="sm" variant="secondary" onClick={handleSaveOrder}><Save size={14} className="mr-1"/> Salvar Ordem</Button>
                             <Button size="sm" variant="secondary" onClick={handleLoadOrder}><Upload size={14} className="mr-1"/> Carregar Ordem</Button>
