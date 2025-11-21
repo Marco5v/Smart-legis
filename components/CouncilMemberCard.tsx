@@ -8,10 +8,10 @@ interface CouncilMemberCardProps {
 
 const CouncilMemberCard: React.FC<CouncilMemberCardProps> = ({ member, isPresent }) => {
     const cardStyle = isPresent ? 'opacity-100' : 'opacity-50';
-    const presenceDotStyle = isPresent ? 'bg-green-400' : 'bg-red-500';
+    const presenceDotStyle = isPresent ? 'bg-sapv-highlight' : 'bg-sapv-gray-dark';
 
     return (
-        <div className={`relative bg-sapv-blue-light rounded-lg p-3 border border-sapv-gray-dark shadow-md transition-opacity duration-300 flex flex-col justify-center h-full text-center ${cardStyle}`}>
+        <div className={`relative bg-sapv-blue-light rounded-lg p-3 border border-sapv-gray-dark transition-opacity duration-300 flex flex-col justify-center h-full text-center ${cardStyle}`}>
             {/* Ícone de presença discreto no canto */}
             <div 
                 className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full ${presenceDotStyle}`}
