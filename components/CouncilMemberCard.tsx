@@ -25,7 +25,7 @@ const CouncilMemberCard: React.FC<CouncilMemberCardProps> = ({ member, isPresent
                 
                 <div className="flex-grow truncate">
                     {/* Nome do vereador com gradiente mais suave */}
-                    <p className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-sapv-gray-light truncate text-lg">
+                    <p className="font-bold text-transparent bg-clip-text bg-gradient-to-b from-white to-sapv-gray-light truncate text-lg">
                         {member.name}
                     </p>
                     {/* Partido */}
