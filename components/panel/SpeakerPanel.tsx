@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../../types';
-// FIX: Import useSession hook to access session state
 import { useSession } from '../../context/SessionContext';
 
 interface SpeakerPanelProps {
@@ -39,31 +38,31 @@ const SpeakerPanel: React.FC<SpeakerPanelProps> = React.memo(({ currentSpeaker, 
 
   if (!currentSpeaker) {
     return (
-        <div className="w-full h-full flex items-center justify-center text-sapv-gray-light text-5xl">
+        <div className="w-full h-full flex items-center justify-center text-gray-400 text-5xl bg-black">
             Aguardando próximo orador...
         </div>
     )
   }
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center text-white p-8 bg-sapv-blue-dark">
-      <h2 className="text-5xl font-bold text-sapv-gray-light mb-12 uppercase tracking-widest">Tribuna</h2>
+    <div className="w-full h-full flex flex-col items-center justify-center text-white p-8 bg-black">
+      <h2 className="text-6xl font-bold text-gray-300 mb-12 uppercase tracking-widest">Tribuna</h2>
       
       <div className="flex flex-col items-center justify-center text-center mb-12">
          <img 
             src={currentSpeaker.photoUrl}
             alt={currentSpeaker.name}
-            className="w-48 h-48 rounded-full border-4 border-sapv-highlight mb-8 shadow-2xl highlight-pulse-animate"
+            className="w-56 h-56 rounded-full border-8 border-yellow-400 mb-8 shadow-2xl"
           />
         <div>
-            <h1 className="text-8xl font-black tracking-wide">
+            <h1 className="text-9xl font-black tracking-wide">
                 {currentSpeaker.name}
             </h1>
-            <p className="text-5xl text-sapv-gray-light mt-2">{currentSpeaker.party}</p>
+            <p className="text-6xl text-gray-400 mt-2">{currentSpeaker.party}</p>
         </div>
       </div>
       
-      <div className={`font-mono text-9xl font-bold p-4 rounded-lg shadow-inner bg-sapv-blue-light border-2 border-sapv-gray-dark ${remainingTime !== null && remainingTime < 30 && remainingTime > 0 ? 'text-red-500 animate-pulse border-red-500' : 'text-sapv-highlight'}`}>
+      <div className={`font-mono text-9xl font-bold p-6 rounded-lg shadow-inner bg-gray-900 border-2 border-gray-700 ${remainingTime !== null && remainingTime < 30 && remainingTime > 0 ? 'text-red-500 animate-pulse border-red-500' : 'text-yellow-400'}`}>
         {formatTime(remainingTime)}
       </div>
     </div>

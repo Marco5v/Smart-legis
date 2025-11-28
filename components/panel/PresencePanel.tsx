@@ -5,18 +5,18 @@ import Clock from './Clock';
 
 // Componente para o círculo de status (presente/ausente)
 const PresenceCircle: React.FC<{ isPresent: boolean }> = ({ isPresent }) => (
-    <div className={`w-6 h-6 rounded-full border-2 border-red-500 flex items-center justify-center mr-3 flex-shrink-0`}>
-        <div className={`w-4 h-4 rounded-full ${isPresent ? 'bg-cyan-400' : 'bg-gray-900'}`} />
+    <div className={`w-6 h-6 rounded-full border-2 ${isPresent ? 'border-green-500' : 'border-red-500'} flex items-center justify-center mr-3 flex-shrink-0`}>
+        <div className={`w-4 h-4 rounded-full ${isPresent ? 'bg-green-500' : 'bg-black'}`} />
     </div>
 );
 
 // Componente para a linha de cada parlamentar
 const MemberRow: React.FC<{ member: UserProfile, isPresent: boolean, role?: string }> = ({ member, isPresent, role }) => (
     <div className="flex items-center text-3xl font-bold whitespace-nowrap">
-        <PresenceCircle isPresent={isPresent} />
         {role ? 
             <span className="text-yellow-400 w-28">{role}</span>
             : <span className="w-28"></span>}
+        <PresenceCircle isPresent={isPresent} />
         <span className="text-red-400 flex-1 truncate pr-4" title={member.name}>{member.name}</span>
         <span className="text-red-400 w-24 text-left">{member.party}</span>
     </div>

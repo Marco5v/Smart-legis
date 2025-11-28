@@ -1,90 +1,62 @@
-
-import React from 'react';
-import { Project, VoteOption } from '../../types';
-import Clock from './Clock';
+import React, { useState, useEffect } from 'react';
+import { Project } from '../../types';
 import { useSession } from '../../context/SessionContext';
+import Clock from './Clock';
 
 const ReadingPanel: React.FC<{ project: Project | null; }> = ({ project }) => {
-  const { legislatureConfig, session } = useSession();
+  const { legislatureConfig } = useSession();
+  const [date, setDate] = useState(new Date());
+
+  useEffect(() => {
+    const timerId = setInterval(() => setDate(new Date()), 1000);
+    return () => clearInterval(timerId);
+  }, []);
 
   if (!project) {
     return (
-      <div className="w-full h-full flex items-center justify-center text-white text-4xl bg-sapv-blue-dark">
+      <div className="w-full h-full flex items-center justify-center text-white text-4xl bg-black">
         Nenhum projeto em leitura.
       </div>
     );
   }
-  
-  const fullDate = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  
-  const votes = session.votes || {};
-  const simVotes = Object.values(votes).filter(v => v === VoteOption.SIM).length;
-  const naoVotes = Object.values(votes).filter(v => v === VoteOption.NAO).length;
-  const absVotes = Object.values(votes).filter(v => v === VoteOption.ABS).length;
-  const totalVotes = simVotes + naoVotes + absVotes;
-  const isVotingActive = session.votingOpen || !!session.votingResult;
 
   return (
-    <div className="w-full h-full flex flex-col text-sapv-gray-light p-8 bg-sapv-blue-dark font-sans antialiased">
-      <header className="text-center pb-4 border-b-2 border-sapv-gray-dark">
-        <h1 className="text-4xl font-bold">CÂMARA MUNICIPAL DE {legislatureConfig.cityName.toUpperCase()}</h1>
-        <p className="text-2xl text-sapv-gray">SESSÃO PLENÁRIA</p>
-      </header>
-      
-      <main className="flex-grow flex flex-col justify-center items-center py-8 overflow-hidden">
-        <div className="w-full max-w-6xl text-center">
-            <h2 className="text-6xl font-black text-sapv-highlight mb-4">
-              {project.title.toUpperCase()}
-            </h2>
-            <p className="text-3xl text-white mb-8">
-              Autor: {project.author.name.toUpperCase()}
-            </p>
-        </div>
+    <div className="w-full h-full flex flex-col text-white bg-black font-sans uppercase p-6">
+      <div className="grid grid-cols-3 gap-8 flex-grow">
         
-        <div className="w-full max-w-5xl bg-sapv-blue-light border border-sapv-gray-dark rounded-lg p-8 h-[40vh] flex flex-col shadow-lg">
-            <h3 className="text-3xl font-bold text-sapv-highlight mb-4 border-b border-sapv-gray-dark pb-2">EMENTA</h3>
-            <div className="flex-grow overflow-y-auto pr-4 text-2xl leading-relaxed">
-                <p>{project.description}</p>
-            </div>
+        {/* Left Column: Description */}
+        <div className="col-span-1 bg-gray-900 border border-white p-4 flex flex-col">
+          <header className="bg-purple-800 text-center py-2 mb-4 -m-4 mt-0">
+            <h2 className="text-2xl font-bold">{project.matterType}</h2>
+          </header>
+          <div className="overflow-y-auto flex-grow pr-2">
+            <p className="text-2xl leading-relaxed">{project.description}</p>
+          </div>
         </div>
-      </main>
 
-      {isVotingActive ? (
-         <footer className="flex-shrink-0 border-t-4 border-sapv-highlight p-4">
-            {session.votingResult ? (
-                 <h2 className={`mb-4 text-center text-5xl font-black tracking-widest ${session.votingResult.includes('APROVADO') ? 'text-green-400' : 'text-red-400'}`}>
-                     {session.votingResult}
-                 </h2>
-            ) : (
-                 <h2 className="mb-4 text-center text-5xl font-black tracking-widest animate-pulse text-yellow-300">
-                     VOTAÇÃO ABERTA
-                 </h2>
-            )}
-            <div className="flex justify-around items-center">
-                <div className="text-center">
-                    <p className="text-3xl font-bold text-green-400">SIM</p>
-                    <p className="text-8xl font-black font-mono">{String(simVotes).padStart(2, '0')}</p>
-                </div>
-                <div className="text-center">
-                    <p className="text-3xl font-bold text-red-400">NÃO</p>
-                    <p className="text-8xl font-black font-mono">{String(naoVotes).padStart(2, '0')}</p>
-                </div>
-                 <div className="text-center">
-                    <p className="text-3xl font-bold text-yellow-400">ABSTENÇÃO</p>
-                    <p className="text-8xl font-black font-mono">{String(absVotes).padStart(2, '0')}</p>
-                </div>
-                 <div className="text-center">
-                    <p className="text-3xl font-bold text-sapv-gray">TOTAL</p>
-                    <p className="text-8xl font-black font-mono">{String(totalVotes).padStart(2, '0')}</p>
-                </div>
+        {/* Right Column: Details */}
+        <div className="col-span-2 flex flex-col justify-between items-center text-center">
+          <div className="w-full">
+            <h1 className="text-4xl font-bold">808ª SESSÃO ORDINÁRIA DO 2º PERÍODO LEGISLATIVO DE 2025</h1>
+            <div className="my-10">
+              <h2 className="text-5xl font-extrabold text-white inline-block">AUTOR: {project.author.name.toUpperCase()}</h2>
+              <div className="h-1.5 bg-yellow-400 mt-1 w-full max-w-lg mx-auto"></div>
             </div>
-        </footer>
-      ) : (
-        <footer className="flex-shrink-0 w-full text-center py-2 flex justify-between items-center px-6 text-2xl font-semibold border-t-2 border-sapv-gray-dark">
-            <Clock />
-            <span>{fullDate}</span>
-        </footer>
-      )}
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-3xl font-bold text-left max-w-2xl mx-auto">
+              <div>TURNO: <span className="text-gray-300">{project.turns || 'Único'}</span></div>
+              <div>QUORUM: <span className="text-gray-300">{project.votingRules.majority}</span></div>
+              <div>TRÂMITE: <span className="text-gray-300">{project.projectPhase || 'Não definido'}</span></div>
+              <div>INSTITUIÇÃO: <span className="text-gray-300">{project.proposingInstitution || 'CÂMARA MUNICIPAL'}</span></div>
+            </div>
+          </div>
+
+          <img src="https://picsum.photos/seed/brasao/120" alt="Brasão do Município" className="h-40" />
+        </div>
+      </div>
+
+      <footer className="text-center font-mono mt-4">
+        <p className="text-2xl">{date.toLocaleDateString('pt-BR', { weekday: 'long' })}, <Clock className="inline-block" /> - {date.toLocaleDateString('pt-BR')}</p>
+      </footer>
     </div>
   );
 };
