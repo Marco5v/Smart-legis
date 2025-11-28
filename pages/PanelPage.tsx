@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSession } from '../context/SessionContext';
 import { PanelView, SessionStatus } from '../types';
@@ -10,6 +9,7 @@ import VotingPanel from '../components/panel/VotingPanel';
 import CouncilMemberCard from '../components/CouncilMemberCard';
 import Clock from '../components/panel/Clock';
 import { Maximize, Minimize } from 'lucide-react';
+import PresencePanel from '../components/panel/PresencePanel';
 
 const PanelPage: React.FC = () => {
   const { session, councilMembers, legislatureConfig } = useSession();
@@ -44,7 +44,6 @@ const PanelPage: React.FC = () => {
   };
 
   const renderMainPanel = () => {
-    // A área principal renderiza o painel dinâmico
     switch (session.panelView) {
       case PanelView.VOTING:
         return <VotingPanel />;
@@ -61,16 +60,17 @@ const PanelPage: React.FC = () => {
         return <MessagePanel
                   message={session.panelMessage}
                 />;
-      // Para PRESENCE, a área principal pode ficar mais limpa, mostrando algo relevante
-      // ou apenas o projeto atual, já que a presença está no rodapé.
       case PanelView.PRESENCE:
+        // O painel de presença agora é o painel de leitura do projeto atual
+        // para dar contexto, já que a lista de presença está sempre visível no rodapé.
         return <ReadingPanel project={session.currentProject} />;
       case PanelView.OFF:
       default:
-        return <OffPanel />;
+        // No novo layout, o OffPanel é tratado separadamente
+        return <ReadingPanel project={null} />;
     }
   };
-
+  
   // A tela de espera (OFF) ocupa a tela inteira.
   if (session.panelView === PanelView.OFF || session.status === SessionStatus.INACTIVE) {
       return <OffPanel />;
