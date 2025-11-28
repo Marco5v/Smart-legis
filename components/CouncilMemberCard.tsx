@@ -5,30 +5,32 @@ import { UserProfile } from '../types';
 interface CouncilMemberCardProps {
     member: UserProfile;
     isPresent: boolean;
-    isConfirmedAbsent: boolean;
+    // FIX: Added 'isConfirmedAbsent' to props to fix type error and allow for visual distinction of confirmed absences.
+    isConfirmedAbsent?: boolean;
 }
 
-const CouncilMemberCard: React.FC<CouncilMemberCardProps> = ({ member, isPresent }) => {
+const CouncilMemberCard: React.FC<CouncilMemberCardProps> = ({ member, isPresent, isConfirmedAbsent = false }) => {
     return (
         <div 
             className={`
-                bg-sapv-blue-light rounded-lg p-3 border border-sapv-gray-dark text-center relative 
+                bg-sapv-blue-light rounded-lg p-3 border text-center relative 
                 transition-opacity duration-300 h-full flex flex-col justify-center
                 ${!isPresent ? 'opacity-50' : 'opacity-100'}
+                ${isConfirmedAbsent ? 'border-red-500' : 'border-sapv-gray-dark'}
             `}
         >
             {/* Ícone discreto de presença */}
             <div 
                 className={`
                     absolute top-2 right-2 w-2.5 h-2.5 rounded-full
-                    ${isPresent ? 'bg-sapv-highlight' : 'bg-sapv-gray-dark'}
+                    ${isPresent ? 'bg-sapv-highlight' : isConfirmedAbsent ? 'bg-red-500' : 'bg-sapv-gray-dark'}
                 `} 
-                title={isPresent ? 'Presente' : 'Ausente'}
+                title={isPresent ? 'Presente' : isConfirmedAbsent ? 'Ausência Confirmada' : 'Ausente'}
             />
 
             {/* Nome com gradiente */}
             <p 
-                className="font-bold text-sm leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-sapv-gray-light truncate"
+                className="font-bold text-sm leading-tight text-transparent bg-clip-text bg-gradient-to-b from-white to-sapv-gray-light truncate"
                 title={member.name}
             >
                 {member.name}
