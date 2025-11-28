@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useSession } from '../context/SessionContext';
 import { PanelView, SessionStatus } from '../types';
 import OffPanel from '../components/panel/OffPanel';
@@ -9,15 +9,13 @@ import VotingPanel from '../components/panel/VotingPanel';
 import PresencePanel from '../components/panel/PresencePanel';
 
 const PanelPage: React.FC = () => {
-  const { session, councilMembers } = useSession();
+  const { session } = useSession();
 
-  // A tela de espera (OFF) ocupa a tela inteira.
+  // A tela de espera (OFF) ocupa a tela inteira se a sessão estiver inativa.
   if (session.status === SessionStatus.INACTIVE) {
       return <OffPanel />;
   }
   
-  const presentMembers = Object.keys(session.presence).filter(uid => session.presence[uid]);
-
   const renderPanel = () => {
     switch (session.panelView) {
       case PanelView.VOTING:
@@ -32,10 +30,10 @@ const PanelPage: React.FC = () => {
       case PanelView.MESSAGE:
         return <MessagePanel message={session.panelMessage} />;
       case PanelView.PRESENCE:
-        return <PresencePanel councilMembers={councilMembers} presentMembers={presentMembers} />;
-      case PanelView.OFF:
+      case PanelView.OFF: // Se a sessão estiver ativa, mas a visualização for OFF, o padrão é a presença
       default:
-        return <OffPanel />;
+        // As props não são mais necessárias, pois o componente busca seus próprios dados.
+        return <PresencePanel />;
     }
   };
 
