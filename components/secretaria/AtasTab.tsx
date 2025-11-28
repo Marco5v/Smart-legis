@@ -4,7 +4,7 @@ import Card from '../common/Card';
 import Button from '../common/Button';
 import { useSession } from '../../context/SessionContext';
 import { SessionHistory } from '../../types';
-import { BookCheck, FileText, Save } from 'lucide-react';
+import { BookCheck, FileText, Save, CheckCircle } from 'lucide-react';
 
 export const AtasTab: React.FC = () => {
     const { sessionHistory, publishedAtas, publishAta, saveAtaDraft } = useSession();
@@ -166,7 +166,12 @@ ${session.votingRecords.map(r => ` - ${r.projectTitle}: ${r.result}`).join('\n')
                         <div className="space-y-4">
                             <h3 className="text-xl font-bold text-sapv-highlight">Editando Ata: Sessão de {new Date(selectedSession.date).toLocaleDateString('pt-BR')}</h3>
                             <p className="text-sm text-sapv-gray">Use o campo abaixo para formatar o texto oficial da ata. Salve o rascunho e, quando estiver pronto, publique no portal.</p>
-                            {feedback && <p className="text-green-300 text-sm p-3 bg-green-900/50 rounded-md">{feedback}</p>}
+                            {feedback && (
+                                <div className="flex items-center gap-3 p-3 mb-4 text-sm text-green-300 bg-green-900/50 border border-green-700 rounded-md transition-opacity duration-300">
+                                    <CheckCircle size={20} />
+                                    <span>{feedback}</span>
+                                </div>
+                            )}
                             <textarea 
                                 value={ataContent}
                                 onChange={handleContentChange}
