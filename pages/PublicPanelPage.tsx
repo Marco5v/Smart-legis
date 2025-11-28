@@ -3,6 +3,8 @@ import { useSession } from '../context/SessionContext';
 import CouncilMemberCard from '../components/CouncilMemberCard';
 import SessionTimer from '../components/SessionTimer';
 import { Maximize, Minimize } from 'lucide-react';
+import { SessionPhase } from '../types';
+import ReadingPanel from '../components/panel/ReadingPanel';
 
 const PublicPanelPage: React.FC = () => {
     const { session, councilMembers } = useSession();
@@ -48,15 +50,21 @@ const PublicPanelPage: React.FC = () => {
     const presentCount = Object.values(session.presence).filter(p => p).length;
     const absentCount = session.legislatureMembers.length - presentCount;
     
-    if (session.status === 'inactive') {
+    if (session.status === 'inactive' || session.phase === SessionPhase.INICIAL) {
         return (
             <div className="w-screen h-screen bg-sapv-blue-dark flex flex-col items-center justify-center text-sapv-gray p-8">
                 <img src="https://picsum.photos/seed/brasao/120" alt="Brasão do Município" className="h-32 mb-8" />
                 <h1 className="text-4xl font-bold text-sapv-gray-light">Painel Eletrônico</h1>
-                <p className="text-2xl mt-2">Aguardando início da sessão pelo controlador.</p>
+                <p className="text-2xl mt-2">Aguardando início da sessão.</p>
             </div>
         );
     }
+    
+    // Mostra o painel de votação/leitura durante a Ordem do Dia
+    if (session.phase === SessionPhase.ORDEM_DO_DIA && session.currentProject) {
+        return <ReadingPanel project={session.currentProject} />;
+    }
+
 
     return (
         <div className="w-screen h-screen bg-sapv-blue-dark text-sapv-gray-light flex flex-col p-4 md:p-6 font-sans overflow-hidden relative">
@@ -101,6 +109,7 @@ const PublicPanelPage: React.FC = () => {
                             key={member.uid} 
                             member={member} 
                             isPresent={session.presence[member.uid] || false}
+                            isConfirmedAbsent={session.confirmedAbsence?.[member.uid] || false}
                         />
                     ))}
                 </div>

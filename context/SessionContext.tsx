@@ -20,6 +20,7 @@ const initialSessionState: SessionState = {
   phase: SessionPhase.INICIAL,
   startTime: null,
   presence: {},
+  confirmedAbsence: {},
   panelView: PanelView.OFF,
   panelMessage: null,
   currentProject: null,
@@ -210,6 +211,7 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
             startTime: Date.now(), 
             presence: initialPresence, 
             phase: SessionPhase.INICIAL,
+            confirmedAbsence: {},
             totalPausedDuration: 0,
             pauseTime: null
         };
@@ -273,11 +275,27 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
   }, []);
   
-  const togglePresence = useCallback((uid: string) => setSession(s => ({...s, presence: {...s.presence, [uid]: !s.presence[uid]}})), []);
+  const togglePresence = useCallback((uid: string) => setSession(s => {
+    const isCurrentlyPresent = !!s.presence[uid];
+    const newPresence = { ...s.presence, [uid]: !isCurrentlyPresent };
+    const newConfirmedAbsence = { ...s.confirmedAbsence };
+    
+    if (isCurrentlyPresent) { // Was present, now is toggled to absent
+        newConfirmedAbsence[uid] = true;
+    } else { // Was absent, now is toggled to present
+        delete newConfirmedAbsence[uid];
+    }
+    return {...s, presence: newPresence, confirmedAbsence: newConfirmedAbsence };
+  }), []);
   
   const registerPresence = useCallback((uid: string, userName: string) => {
     if (session.status === SessionStatus.ACTIVE) {
-        setSession(s => ({...s, presence: {...s.presence, [uid]: true}}));
+        setSession(s => {
+            const newPresence = {...s.presence, [uid]: true};
+            const newConfirmedAbsence = {...s.confirmedAbsence};
+            delete newConfirmedAbsence[uid];
+            return {...s, presence: newPresence, confirmedAbsence: newConfirmedAbsence};
+        });
         addLog('PRESENCA_REGISTRADA', userName);
     }
   }, [session.status, addLog]);
@@ -419,7 +437,11 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
   const forceLogout = useCallback((uid: string, adminName: string) => {
     const memberName = councilMembers.find(m => m.uid === uid)?.name || uid;
     addLog('LOGOUT_FORCADO', adminName, `Usuário: ${memberName}`);
-    setSession(s => ({...s, presence: {...s.presence, [uid]: false}}));
+    setSession(s => ({
+        ...s, 
+        presence: {...s.presence, [uid]: false},
+        confirmedAbsence: {...s.confirmedAbsence, [uid]: true}
+    }));
   }, [addLog, councilMembers]);
 
   const exportSystemData = useCallback(() => {

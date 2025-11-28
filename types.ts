@@ -201,6 +201,7 @@ export interface SessionState {
 
     // Controle de Presença
     presence: Record<string, boolean>; // { [uid]: isPresent }
+    confirmedAbsence: Record<string, boolean>; // { [uid]: isConfirmedAbsent }
     
     // Controle do Painel Público
     panelView: PanelView;
