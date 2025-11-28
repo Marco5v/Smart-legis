@@ -136,6 +136,7 @@ interface SessionContextType {
   // Data Management (Secretaria)
   addProject: (projectData: Omit<Project, 'id'|'votingStatus'|'amendments'|'pareceres'|'transmittalHistory'>) => void;
   addCommission: (commissionData: Omit<Commission, 'id'>) => void;
+  updateCommission: (commission: Commission) => void;
   addAmendment: (amendmentData: Omit<Amendment, 'id'>) => void;
   updateAmendment: (amendment: Amendment) => void;
   deleteAmendment: (amendmentId: string, projectId: string) => void;
@@ -393,6 +394,10 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
       setData(d => ({...d, commissions: [newCommission, ...d.commissions]}));
   }, []);
 
+  const updateCommission = useCallback((commission: Commission) => {
+    setData(d => ({...d, commissions: d.commissions.map(c => c.id === commission.id ? commission : c)}));
+  }, []);
+
   const addAmendment = useCallback((amendmentData: Omit<Amendment, 'id'>) => {
       const newAmendment: Amendment = {...amendmentData, id: `amend-${Date.now()}`};
       setData(d => ({...d, projects: d.projects.map(p => p.id === newAmendment.parentProjectId ? {...p, amendments: [...(p.amendments || []), newAmendment]} : p)}));
@@ -484,7 +489,7 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children })
         requestInterruption, resolveInterruption, requestPointOfOrder, resolvePointOfOrder, requestVerification,
         toggleMicrophone, muteAllMicrophones,
         sendOperationalChatMessage,
-        addProject, addCommission, addAmendment, updateAmendment, deleteAmendment, addParecer, saveAtaDraft, publishAta,
+        addProject, addCommission, updateCommission, addAmendment, updateAmendment, deleteAmendment, addParecer, saveAtaDraft, publishAta,
         resetSystem, updateLegislatureConfig, forceLogout, exportSystemData, importSystemData, adminFixVote
     }}>
       {children}

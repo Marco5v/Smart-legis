@@ -24,6 +24,9 @@ const ControladorDashboard: React.FC = () => {
     const [overrideVoteValue, setOverrideVoteValue] = useState<VoteOption | ''>('');
     const [pautaTab, setPautaTab] = useState<'Expediente' | 'Ordem do Dia'>('Expediente');
     const [feedback, setFeedback] = useState('');
+    
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
     const projetosPauta = useMemo(() => projects.filter(p => p.workflowStatus === 'Pronto para Pauta'), [projects]);
     const projetosExpedienteOriginal = useMemo(() => projetosPauta.filter(p => p.projectPhase === 'Expediente'), [projetosPauta]);
@@ -45,16 +48,30 @@ const ControladorDashboard: React.FC = () => {
         setTimeout(() => setFeedback(''), 3000);
     };
 
-    const moveItem = (index: number, direction: 'up' | 'down', list: 'expediente' | 'ordem') => {
-        const updater = list === 'expediente' ? setExpedienteOrdenado : setOrdemDoDiaOrdenada;
-        updater(currentList => {
-            const newList = [...currentList];
-            const swapIndex = direction === 'up' ? index - 1 : index + 1;
-            if (swapIndex < 0 || swapIndex >= newList.length) return newList;
-            [newList[index], newList[swapIndex]] = [newList[swapIndex], newList[index]]; // Swap
-            return newList;
-        });
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number, list: 'expediente' | 'ordem') => {
+        setDraggedIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
     };
+
+    const handleDragEnter = (index: number) => {
+        if (draggedIndex === null || draggedIndex === index) return;
+        setDragOverIndex(index);
+    };
+
+    const handleDragEnd = (list: 'expediente' | 'ordem') => {
+        if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+            const listUpdater = list === 'expediente' ? setExpedienteOrdenado : setOrdemDoDiaOrdenada;
+            listUpdater(currentList => {
+                const listCopy = [...currentList];
+                const [draggedItemContent] = listCopy.splice(draggedIndex!, 1);
+                listCopy.splice(dragOverIndex!, 0, draggedItemContent);
+                return listCopy;
+            });
+        }
+        setDraggedIndex(null);
+        setDragOverIndex(null);
+    };
+
 
     const PAUTA_STORAGE_KEY = 'sapv-pauta-ordem-controlador';
 
@@ -106,8 +123,8 @@ const ControladorDashboard: React.FC = () => {
 
 
     const openPanel = () => {
+        const panelUrl = `${window.location.origin}${window.location.pathname}#/panel`;
         if (!panelWindow.current || panelWindow.current.closed) {
-            const panelUrl = `${window.location.origin}${window.location.pathname}#/panel`;
             panelWindow.current = window.open(panelUrl, 'SMART_LEGIS_Painel', 'width=1280,height=720,menubar=no,toolbar=no,location=no,status=no');
         } else {
             panelWindow.current.focus();
@@ -176,20 +193,29 @@ const ControladorDashboard: React.FC = () => {
                             <Button size="sm" variant="secondary" onClick={handleSaveOrder}><Save size={14} className="mr-1"/> Salvar Ordem</Button>
                             <Button size="sm" variant="secondary" onClick={handleLoadOrder}><Upload size={14} className="mr-1"/> Carregar Ordem</Button>
                         </div>
-                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                        <div 
+                            className="space-y-1 max-h-60 overflow-y-auto pr-2"
+                            onDragLeave={() => setDragOverIndex(null)}
+                        >
                            {(pautaTab === 'Expediente' ? expedienteOrdenado : ordemDoDiaOrdenada).map((p, index) => (
-                               <div key={p.id} className="bg-sapv-blue-dark p-2 rounded flex items-center justify-between">
-                                   <div className="flex-grow">
-                                       <p className="text-sm font-semibold">{p.title}</p>
-                                       <Button size="sm" variant="secondary" className="w-full mt-1 text-xs" onClick={() => handleEspelharEmenta(p)}>
-                                           <FileText size={12} className="mr-1"/> Espelhar Ementa no Painel
-                                       </Button>
+                                <React.Fragment key={p.id}>
+                                    {dragOverIndex === index && draggedIndex !== index && <div className="h-1 bg-sapv-highlight rounded-full my-1" />}
+                                    <div 
+                                        draggable
+                                        onDragStart={(e) => handleDragStart(e, index, pautaTab === 'Expediente' ? 'expediente' : 'ordem')}
+                                        onDragEnter={() => handleDragEnter(index)}
+                                        onDragEnd={() => handleDragEnd(pautaTab === 'Expediente' ? 'expediente' : 'ordem')}
+                                        onDragOver={(e) => e.preventDefault()}
+                                        className={`p-2 rounded flex items-center justify-between transition-opacity duration-300 bg-sapv-blue-dark ${draggedIndex === index ? 'opacity-30' : 'opacity-100'}`}
+                                    >
+                                       <div className="flex-grow">
+                                           <p className="text-sm font-semibold">{p.title}</p>
+                                           <Button size="sm" variant="secondary" className="w-full mt-1 text-xs" onClick={() => handleEspelharEmenta(p)}>
+                                               <FileText size={12} className="mr-1"/> Espelhar Ementa no Painel
+                                           </Button>
+                                       </div>
                                    </div>
-                                    <div className="flex flex-col ml-2">
-                                        <button onClick={() => moveItem(index, 'up', pautaTab === 'Expediente' ? 'expediente' : 'ordem')} disabled={index === 0} className="disabled:opacity-20 text-sapv-gray hover:text-sapv-highlight"><ArrowUp size={18}/></button>
-                                        <button onClick={() => moveItem(index, 'down', pautaTab === 'Expediente' ? 'expediente' : 'ordem')} disabled={index === (pautaTab === 'Expediente' ? expedienteOrdenado.length - 1 : ordemDoDiaOrdenada.length - 1)} className="disabled:opacity-20 text-sapv-gray hover:text-sapv-highlight"><ArrowDown size={18}/></button>
-                                    </div>
-                               </div>
+                                </React.Fragment>
                            ))}
                         </div>
                     </Card>

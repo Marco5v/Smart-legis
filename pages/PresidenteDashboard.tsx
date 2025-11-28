@@ -6,8 +6,8 @@ import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { useSession } from '../context/SessionContext';
 import { useAuth } from '../context/AuthContext';
-// FIX: Import SessionPhase for type safety
-import { Project, PanelView, VotingType, MajorityType, UserProfile, ProjectWorkflowStatus, SessionPhase } from '../types';
+// FIX: Import SessionPhase and ProjectPhase for type safety
+import { Project, PanelView, VotingType, MajorityType, UserProfile, ProjectWorkflowStatus, SessionPhase, ProjectPhase } from '../types';
 import { OperationalChat } from '../components/common/OperationalChat';
 import Tabs from '../components/common/Tabs';
 
@@ -24,7 +24,8 @@ const PresidenteDashboard: React.FC = () => {
         annulVoting, pauseSpeakerTimer, addSpeakerTime, resolveInterruption, setCurrentProject,
         resolvePointOfOrder, setPhase, toggleMicrophone, muteAllMicrophones,
         startSymbolicVoting, resolveSymbolicVote, resolveVerification,
-        councilMembers, setDefaultSpeakerDuration
+        councilMembers, setDefaultSpeakerDuration, setPanelMessage,
+        setPanelView
     } = useSession();
     
     const [pautaTab, setPautaTab] = useState<'Expediente' | 'Ordem do Dia'>('Expediente');
@@ -32,6 +33,7 @@ const PresidenteDashboard: React.FC = () => {
     const [remainingSpeakerTime, setRemainingSpeakerTime] = useState<number | null>(null);
     const [defaultSpeakerTime, setDefaultSpeakerTime] = useState(session.defaultSpeakerDuration / 60);
     const [selectedBlockItems, setSelectedBlockItems] = useState<Set<string>>(new Set());
+    const [panelMessage, setLocalPanelMessage] = useState('');
 
     useEffect(() => {
         setDefaultSpeakerTime(session.defaultSpeakerDuration / 60);
@@ -81,9 +83,11 @@ const PresidenteDashboard: React.FC = () => {
         return hierarchicalPauta;
     };
 
-    const projetosPauta = useMemo(() => projects.filter(p => p.workflowStatus === 'Pronto para Pauta'), [projects]);
-    const projetosExpedienteOriginal = useMemo(() => buildHierarchy(projects.filter(p => p.projectPhase === 'Expediente')), [projects]);
-    const projetosOrdemDoDiaOriginal = useMemo(() => buildHierarchy(projects.filter(p => p.projectPhase === 'Ordem do Dia')), [projects]);
+    const projetosPauta = useMemo(() => projects.filter(p => p.workflowStatus === ProjectWorkflowStatus.PRONTO_PARA_PAUTA), [projects]);
+    // FIX: Use ProjectPhase enum for filtering projects by phase to avoid type comparison errors.
+    const projetosExpedienteOriginal = useMemo(() => buildHierarchy(projects.filter(p => p.projectPhase === ProjectPhase.EXPEDIENTE)), [projects]);
+    // FIX: Use ProjectPhase enum for filtering projects by phase to avoid type comparison errors.
+    const projetosOrdemDoDiaOriginal = useMemo(() => buildHierarchy(projects.filter(p => p.projectPhase === ProjectPhase.ORDEM_DO_DIA)), [projects]);
     
     const [expedienteOrdenado, setExpedienteOrdenado] = useState<ProjectWithChildren[]>([]);
     const [ordemDoDiaOrdenada, setOrdemDoDiaOrdenada] = useState<ProjectWithChildren[]>([]);
@@ -187,6 +191,22 @@ const PresidenteDashboard: React.FC = () => {
         if(session.status === 'active') {
             setCurrentProject(project);
         }
+    };
+
+    const handleSendMessage = () => {
+        if (panelMessage) {
+            setPanelMessage(panelMessage);
+            setPhase(SessionPhase.INICIAL); // Or another appropriate phase
+            // FIX: Add missing function `setPanelView` to `useSession` destructuring.
+            setPanelView(PanelView.MESSAGE);
+        }
+    };
+
+    const handleRemoveMessage = () => {
+        setPanelMessage(null);
+        setLocalPanelMessage('');
+        // FIX: Add missing function `setPanelView` to `useSession` destructuring.
+        setPanelView(PanelView.PRESENCE);
     };
     
     const presentCount = Object.values(session.presence).filter(p => p).length;
@@ -296,20 +316,21 @@ const PresidenteDashboard: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
                     <Card title="Comandos da Sessão">
-                        <div className="flex gap-4">
+                        <div className="flex gap-4 items-center">
+                            <p className="text-lg">Sessão: <span className={`font-bold uppercase ${session.status === 'active' ? 'text-green-400 animate-pulse' : 'text-red-400'}`}>{session.status === 'active' ? 'ATIVA' : 'INATIVA'}</span></p>
                             {session.status === 'inactive' ? (
                                 // FIX: Pass user name to startSession. It expects a userName for logging.
                                 <Button onClick={() => user && startSession(user.name)} disabled={!quorumMet} size="lg" className="flex-1 py-4 text-xl">
-                                    <Play size={24} className="mr-3" /> Iniciar Sessão Local ({presentCount}/{legislatureConfig.totalMembers})
+                                    <Play size={24} className="mr-3" /> Iniciar Sessão ({presentCount}/{legislatureConfig.totalMembers})
                                 </Button>
                             ) : (
                                 <>
                                     {/* FIX: Use enum members for setting phase */}
-                                    <Button onClick={() => setPhase(SessionPhase.EXPEDIENTE)} variant={session.phase === SessionPhase.EXPEDIENTE ? 'primary' : 'secondary'}>Iniciar Expediente</Button>
-                                    <Button onClick={() => setPhase(SessionPhase.ORDEM_DO_DIA)} variant={session.phase === SessionPhase.ORDEM_DO_DIA ? 'primary' : 'secondary'}>Iniciar Ordem do Dia</Button>
+                                    <Button onClick={() => setPhase(SessionPhase.EXPEDIENTE)} variant={session.phase === SessionPhase.EXPEDIENTE ? 'primary' : 'secondary'}>Expediente</Button>
+                                    <Button onClick={() => setPhase(SessionPhase.ORDEM_DO_DIA)} variant={session.phase === SessionPhase.ORDEM_DO_DIA ? 'primary' : 'secondary'}>Ordem do Dia</Button>
                                     {/* FIX: Pass user name to endSession. It expects a userName for logging. */}
-                                    <Button onClick={() => user && endSession(user.name)} variant="danger" size="lg" className="flex-1 py-4 text-xl">
-                                        <XCircle size={24} className="mr-3" /> Encerrar e Sincronizar
+                                    <Button onClick={() => user && endSession(user.name)} variant="danger">
+                                        <XCircle size={16} className="mr-2" /> Encerrar
                                     </Button>
                                 </>
                             )}
@@ -364,7 +385,7 @@ const PresidenteDashboard: React.FC = () => {
                     </Card>
                     
                      <Card title="Controle da Tribuna">
-                        <div className="flex items-center gap-3 p-3 bg-sapv-blue-dark rounded-md mb-4 border-b border-sapv-gray-dark">
+                        <div className="flex flex-wrap items-center gap-3 p-3 bg-sapv-blue-dark rounded-md mb-4 border-b border-sapv-gray-dark">
                             <label htmlFor="speaker-time" className="text-sm font-semibold whitespace-nowrap">Tempo Padrão (min):</label>
                             <input
                                 id="speaker-time"
@@ -377,6 +398,7 @@ const PresidenteDashboard: React.FC = () => {
                                 aria-label="Tempo padrão do orador em minutos"
                             />
                             <Button onClick={handleSetDefaultTime} size="sm" variant="secondary">Definir</Button>
+                            {feedback && <span className="text-xs text-green-400 ml-auto">{feedback.includes('Tempo') && feedback}</span>}
                         </div>
                         {session.interruptionRequest?.active && (
                             <div className="bg-yellow-900 border border-yellow-500 text-yellow-300 p-4 rounded-lg mb-4 flex justify-between items-center animate-pulse">
@@ -424,7 +446,7 @@ const PresidenteDashboard: React.FC = () => {
                             setActiveTab={(tab) => setPautaTab(tab as 'Expediente' | 'Ordem do Dia')}
                         />
                         <div className="flex justify-end items-center gap-2 my-4 border-b border-sapv-gray-dark pb-2">
-                            {feedback && <span className="text-xs text-green-400 mr-auto transition-opacity duration-300">{feedback}</span>}
+                            {feedback && <span className="text-xs text-green-400 mr-auto transition-opacity duration-300">{feedback.includes('pauta') && feedback}</span>}
                             <Button size="sm" variant="secondary" onClick={handleSaveOrder}><Save size={14} className="mr-1"/> Salvar Ordem</Button>
                             <Button size="sm" variant="secondary" onClick={handleLoadOrder}><Upload size={14} className="mr-1"/> Carregar Ordem</Button>
                         </div>
@@ -528,6 +550,21 @@ const PresidenteDashboard: React.FC = () => {
                                 </Button>
                             </div>
                         )}
+                    </Card>
+                     <Card title="Mensagem de Aviso no Painel">
+                        <textarea 
+                            value={panelMessage} 
+                            onChange={(e) => setLocalPanelMessage(e.target.value)} 
+                            rows={2} 
+                            className="w-full p-2 bg-sapv-blue-dark border border-sapv-gray-dark rounded-md" 
+                            placeholder="Ex: A sessão será suspensa por 5 minutos."
+                        />
+                        <div className="flex gap-2 mt-2">
+                            <Button onClick={handleSendMessage} disabled={!panelMessage} className="flex-1">Enviar Mensagem</Button>
+                            {session.panelView === PanelView.MESSAGE && (
+                                <Button onClick={handleRemoveMessage} variant="danger">Remover</Button>
+                            )}
+                        </div>
                     </Card>
                      <Card title="Chat Operacional da Mesa" className="flex flex-col h-96">
                         <OperationalChat />

@@ -125,7 +125,7 @@ const VereadorInterface: React.FC = () => {
         if (!session.votingOpen || myVote) return;
         // FIX: Pass voterName for logging purposes.
         castVote(user.uid, vote, user.name);
-    }, [session.votingOpen, myVote, castVote, user.uid, user.name]);
+    }, [session.votingOpen, myVote, castVote, user]);
 
     const handleRequestToSpeak = useCallback(() => {
         if (isQueued) return;
