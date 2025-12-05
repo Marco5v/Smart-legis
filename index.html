@@ -10,18 +10,7 @@
     <script>
       tailwind.config = {
         theme: {
-          extend: {
-            colors: {
-              'sapv-blue-dark': '#0a192f',
-              'sapv-blue-light': '#112240',
-              'sapv-gray-light': '#ccd6f6',
-              'sapv-gray': '#8892b0',
-              'sapv-gray-dark': '#495670',
-              'sapv-highlight': '#64ffda',
-              'sapv-green-present': '#2e7d32',
-              'sapv-red-absent': '#c62828',
-            },
-          }
+          
         }
       }
     </script>
@@ -32,21 +21,6 @@
         color: #ccd6f6;
         -webkit-font-smoothing: antialiased;
         -moz-osx-smoothing: grayscale;
-      }
-      @keyframes fadeIn {
-        from { opacity: 0; transform: scale(0.98); }
-        to { opacity: 1; transform: scale(1); }
-      }
-      .panel-fade-in {
-        animation: fadeIn 0.4s ease-in-out;
-      }
-      @keyframes highlight-pulse {
-        0% { box-shadow: 0 0 0 0 rgba(100, 255, 218, 0.7); }
-        70% { box-shadow: 0 0 0 12px rgba(100, 255, 218, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(100, 255, 218, 0); }
-      }
-      .highlight-pulse-animate {
-        animation: highlight-pulse 2.5s infinite;
       }
     </style>
      <script type="importmap">
