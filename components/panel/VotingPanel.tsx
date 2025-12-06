@@ -1,166 +1,118 @@
-import React, { useState, useEffect } from 'react';
-import { UserProfile, VoteOption } from '../../types';
+
+import React from 'react';
 import { useSession } from '../../context/SessionContext';
+import { VoteOption, UserProfile } from '../../types';
+import { CheckCircle, XCircle, MinusCircle } from 'lucide-react';
 import Clock from './Clock';
 
-const getVoteStyle = (vote?: VoteOption) => {
+const VoteIcon: React.FC<{ vote: VoteOption | undefined }> = ({ vote }) => {
     switch (vote) {
-        case VoteOption.SIM: return 'text-green-500';
-        case VoteOption.NAO: return 'text-red-500';
-        case VoteOption.ABS: return 'text-yellow-400';
-        default: return 'text-gray-500';
+        case VoteOption.SIM:
+            return <CheckCircle className="w-10 h-10 text-green-400" />;
+        case VoteOption.NAO:
+            return <XCircle className="w-10 h-10 text-red-400" />;
+        case VoteOption.ABS:
+            return <MinusCircle className="w-10 h-10 text-yellow-400" />;
+        default:
+            return <div className="w-10 h-10 border-2 border-dashed border-sapv-gray-dark rounded-full" />;
     }
 };
-const getVoteLabel = (vote?: VoteOption) => vote || '...';
 
+const MemberVoteCard: React.FC<{ member: UserProfile; vote: VoteOption | undefined; isPresent: boolean }> = ({ member, vote, isPresent }) => {
+    let cardStyle = 'bg-sapv-blue-light border-sapv-gray-dark';
+    let textStyle = 'text-sapv-gray-light';
 
-const MemberRow: React.FC<{ member: UserProfile, vote?: VoteOption, role?: string }> = ({ member, vote, role }) => (
-    <div className="flex items-center text-3xl font-bold whitespace-nowrap">
-        {role ? 
-            <span className="text-yellow-400 w-28">{role}</span>
-            : <span className="w-28"></span>}
-        <span className={`w-28 text-center font-black ${getVoteStyle(vote)}`}>{getVoteLabel(vote)}</span>
-        <span className="text-red-400 flex-1 truncate pr-4" title={member.name}>{member.name}</span>
-        <span className="text-red-400 w-24 text-left">{member.party}</span>
-    </div>
-);
-
-const VotingPanel: React.FC = () => {
-    const { session, councilMembers, legislatureConfig } = useSession();
-    const { votes, presence, currentProject } = session;
-
-    const [date, setDate] = useState(new Date());
-
-    useEffect(() => {
-        const timerId = setInterval(() => setDate(new Date()), 1000);
-        return () => clearInterval(timerId);
-    }, []);
-    
-    const presentCount = Object.values(presence).filter(p => p).length;
-    const totalMembers = councilMembers.length;
-    const absentCount = totalMembers - presentCount;
-    
-    const simVotes = Object.values(votes).filter(v => v === VoteOption.SIM).length;
-    const naoVotes = Object.values(votes).filter(v => v === VoteOption.NAO).length;
-    const absVotes = Object.values(votes).filter(v => v === VoteOption.ABS).length;
-
-    const president = councilMembers.find(m => m.boardRole === 'Presidente');
-    const boardMembersOrder = ['Vice-Presidente', '1º Secretário', '2º Secretário'];
-    
-    const otherMembers = councilMembers
-        .filter(m => m.uid !== president?.uid)
-        .sort((a, b) => {
-            const roleAIndex = a.boardRole ? boardMembersOrder.indexOf(a.boardRole) : -1;
-            const roleBIndex = b.boardRole ? boardMembersOrder.indexOf(b.boardRole) : -1;
-            if (roleAIndex !== -1 && roleBIndex !== -1) return roleAIndex - roleBIndex;
-            if (roleAIndex !== -1) return -1;
-            if (roleBIndex !== -1) return 1;
-            return a.name.localeCompare(b.name);
-        });
-
-    const midPoint = Math.ceil(otherMembers.length / 2);
-    const leftColumnMembers = otherMembers.slice(0, midPoint);
-    const rightColumnMembers = otherMembers.slice(midPoint);
-
-    const getRoleLabel = (role: string | undefined) => {
-        if (!role) return undefined;
-        switch(role) {
-            case 'Vice-Presidente': return 'VICE';
-            case '1º Secretário': return '1ºSEC';
-            case '2º Secretário': return '2ºSEC';
-            default: return undefined;
+    if (!isPresent) {
+        cardStyle = 'bg-gray-800 border-gray-700 opacity-50';
+        textStyle = 'text-gray-500 line-through';
+    } else if (vote) {
+        switch (vote) {
+            case VoteOption.SIM: cardStyle = 'bg-green-900 border-green-500 scale-105 shadow-lg'; break;
+            case VoteOption.NAO: cardStyle = 'bg-red-900 border-red-500 scale-105 shadow-lg'; break;
+            case VoteOption.ABS: cardStyle = 'bg-yellow-900 border-yellow-500 scale-105 shadow-lg'; break;
         }
     }
 
     return (
-         <div className="w-full h-full flex flex-col text-white bg-black font-sans uppercase">
-            <header className="bg-blue-800 py-3 text-center">
-                <h1 className="text-5xl font-extrabold tracking-wider">VOTAÇÃO - {currentProject?.title || 'PAUTA'}</h1>
-            </header>
-
-            <div className="flex-grow flex p-4 gap-4 overflow-hidden">
-                <div className="w-3/4 flex flex-col">
-                    {president && (
-                         <div className="mb-2 pb-2 border-b-2 border-yellow-400">
-                           <div className="flex items-center text-3xl font-bold whitespace-nowrap">
-                               <span className="text-yellow-400 w-72">PRESIDENTE DA CÂMARA:</span>
-                               <span className={`w-28 text-center font-black ${getVoteStyle(votes[president.uid])}`}>{getVoteLabel(votes[president.uid])}</span>
-                               <span className="text-red-400 flex-1 truncate pr-4">{president.name}</span>
-                               <span className="text-red-400 w-24 text-left">{president.party}</span>
-                           </div>
-                        </div>
-                    )}
-                    <div className="flex-grow grid grid-cols-2 gap-x-12 gap-y-3 pt-2">
-                        <div className="flex flex-col gap-3">
-                            {leftColumnMembers.map(member => (
-                                <MemberRow 
-                                    key={member.uid}
-                                    member={member}
-                                    vote={votes[member.uid]}
-                                    role={getRoleLabel(member.boardRole)}
-                                />
-                            ))}
-                        </div>
-                         <div className="flex flex-col gap-3">
-                             {rightColumnMembers.map(member => (
-                                <MemberRow 
-                                    key={member.uid}
-                                    member={member}
-                                    vote={votes[member.uid]}
-                                    role={getRoleLabel(member.boardRole)}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                </div>
-                <aside className="w-1/4 flex flex-col justify-between border-l-2 border-gray-700 pl-4">
-                    <div className="space-y-2 text-2xl font-extrabold">
-                        <div className="flex justify-between items-center border-b border-gray-700 pb-1">
-                            <span>PARLAMENTARES</span>
-                            <span>{String(totalMembers).padStart(2, '0')}</span>
-                        </div>
-                        <div className="flex justify-between items-center border-b border-gray-700 pb-1 text-orange-500">
-                             <span>AUSENTES</span>
-                            <span>{String(absentCount).padStart(2, '0')}</span>
-                        </div>
-                        <div className="flex justify-between items-center border-b border-gray-700 pb-1 text-cyan-400">
-                             <span>PRESENTES</span>
-                            <span>{String(presentCount).padStart(2, '0')}</span>
-                        </div>
-                    </div>
-                    <div className="flex justify-around items-center my-6">
-                        <div className="text-center">
-                            <p className="text-6xl font-black text-green-500">{String(simVotes).padStart(2, '0')}</p>
-                            <div className="border-2 border-gray-700 px-6 py-1 mt-1">
-                                <p className="text-2xl font-extrabold text-green-500">SIM</p>
-                            </div>
-                        </div>
-                         <div className="text-center">
-                            <p className="text-6xl font-black text-red-500">{String(naoVotes).padStart(2, '0')}</p>
-                             <div className="border-2 border-gray-700 px-6 py-1 mt-1">
-                                <p className="text-2xl font-extrabold text-red-500">NÃO</p>
-                            </div>
-                        </div>
-                         <div className="text-center">
-                            <p className="text-6xl font-black text-yellow-400">{String(absVotes).padStart(2, '0')}</p>
-                             <div className="border-2 border-gray-700 px-4 py-1 mt-1">
-                                <p className="text-2xl font-extrabold text-yellow-400">ABS</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="text-center font-mono">
-                         <Clock className="text-5xl font-bold" />
-                         <p className="text-2xl mt-1">{date.toLocaleDateString('pt-BR')}</p>
-                    </div>
-                </aside>
+        <div className={`p-4 rounded-lg border-2 flex flex-col items-center justify-center transition-all duration-300 ${cardStyle}`}>
+            <img src={member.photoUrl} alt={member.name} className="w-20 h-20 rounded-full mb-3" />
+            <p className={`font-bold text-center text-lg leading-tight ${textStyle}`}>{member.name}</p>
+            <p className={`text-sm ${isPresent ? 'text-sapv-gray' : 'text-gray-600'}`}>{member.party}</p>
+            <div className="mt-4">
+                {isPresent ? <VoteIcon vote={vote} /> : <p className="font-bold text-red-500">AUSENTE</p>}
             </div>
-            {session.votingResult && (
-                <footer className="border-t-2 border-yellow-400 py-2 text-center">
-                    <p className={`text-4xl font-bold ${session.votingResult.includes('APROVADO') ? 'text-green-500' : 'text-red-500'}`}>{session.votingResult}</p>
-                </footer>
-            )}
         </div>
     );
 };
 
-export default VotingPanel;
+const VotingPanel: React.FC = () => {
+    const { session, councilMembers } = useSession();
+    const { currentProject, votes, votingResult, presence } = session;
+
+    if (!currentProject) {
+        return (
+            <div className="w-full h-full flex items-center justify-center text-white text-4xl bg-black">
+                Aguardando matéria para votação...
+            </div>
+        );
+    }
+    
+    const simCount = Object.values(votes).filter(v => v === VoteOption.SIM).length;
+    const naoCount = Object.values(votes).filter(v => v === VoteOption.NAO).length;
+    const absCount = Object.values(votes).filter(v => v === VoteOption.ABS).length;
+    const presentCount = Object.values(presence).filter(p => p).length;
+    const notVotedCount = presentCount - (simCount + naoCount + absCount);
+
+    return (
+        <div className="w-full h-full flex flex-col text-white bg-gradient-to-b from-blue-900 via-sapv-blue-dark to-black p-6">
+            <header className="text-center mb-4">
+                <h1 className="text-3xl font-bold tracking-wider">{currentProject.title}</h1>
+                <p className="text-lg text-sapv-gray">{currentProject.description}</p>
+            </header>
+            
+            <main className="flex-1 grid grid-cols-4 lg:grid-cols-6 gap-4 overflow-y-auto pr-2">
+                {councilMembers.map(member => (
+                    <MemberVoteCard
+                        key={member.uid}
+                        member={member}
+                        vote={votes[member.uid]}
+                        isPresent={!!presence[member.uid]}
+                    />
+                ))}
+            </main>
+
+            <footer className="mt-4 pt-4 border-t border-sapv-gray-dark flex justify-between items-center">
+                <div className="flex gap-8">
+                    <div className="text-center">
+                        <p className="text-xl font-semibold text-green-400">SIM</p>
+                        <p className="text-6xl font-bold">{simCount}</p>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-xl font-semibold text-red-400">NÃO</p>
+                        <p className="text-6xl font-bold">{naoCount}</p>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-xl font-semibold text-yellow-400">ABST.</p>
+                        <p className="text-6xl font-bold">{absCount}</p>
+                    </div>
+                     <div className="text-center">
+                        <p className="text-xl font-semibold text-sapv-gray">N/V</p>
+                        <p className="text-6xl font-bold">{notVotedCount}</p>
+                    </div>
+                </div>
+
+                <div className="text-center">
+                    <h2 className={`text-5xl font-extrabold animate-pulse ${votingResult ? (votingResult.includes('APROVADO') ? 'text-green-400' : 'text-red-400') : 'text-sapv-highlight'}`}>
+                        {votingResult || (session.votingOpen ? 'VOTAÇÃO ABERTA' : 'VOTAÇÃO ENCERRADA')}
+                    </h2>
+                </div>
+                
+                <div className="text-right">
+                    <Clock className="text-5xl" />
+                </div>
+            </footer>
+        </div>
+    );
+};
+
+export default React.memo(VotingPanel);

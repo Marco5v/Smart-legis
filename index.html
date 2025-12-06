@@ -10,7 +10,18 @@
     <script>
       tailwind.config = {
         theme: {
-          
+          extend: {
+            colors: {
+              'sapv-blue-dark': '#0a192f',
+              'sapv-blue-light': '#112240',
+              'sapv-gray-light': '#ccd6f6',
+              'sapv-gray': '#8892b0',
+              'sapv-gray-dark': '#495670',
+              'sapv-highlight': '#64ffda',
+              'sapv-green-present': '#64ffda',
+              'sapv-red-absent': '#ff6489',
+            },
+          }
         }
       }
     </script>
@@ -20,7 +31,7 @@
         background-color: #0a192f;
         color: #ccd6f6;
         -webkit-font-smoothing: antialiased;
-        -moz-osx-smoothing: grayscale;
+        -moz-osx-font-smoothing: grayscale;
       }
     </style>
      <script type="importmap">
