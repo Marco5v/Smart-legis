@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { User, Users, Play, FileText, Pause, Mic } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Users, Play, FileText, Pause, Mic, Clock as ClockIcon, Info } from 'lucide-react';
 
-// --- 1. TIPOS E MOCKS (Para simular o ambiente do seu projeto) ---
+// --- 1. DEFINIÇÕES DE TIPOS E MOCKS (Ambiente Autônomo) ---
 
 enum UserRole { PRESIDENTE = 'Presidente', VEREADOR = 'Vereador' }
 enum VoteOption { SIM = 'Sim', NAO = 'Não', ABS = 'Abster-se' }
@@ -14,7 +14,17 @@ interface UserProfile {
   party: string;
   role: UserRole;
   boardRole?: string;
-  photoUrl?: string; // Opcional para o mock
+  photoUrl?: string;
+}
+
+interface Project {
+    id: string;
+    title: string;
+    description: string;
+    matterType: string;
+    author: { name: string };
+    votingRules: { majority: string };
+    turns?: string;
 }
 
 const DADOS_VEREADORES: UserProfile[] = [
@@ -32,26 +42,29 @@ const DADOS_VEREADORES: UserProfile[] = [
   { uid: '12', name: 'ADRIANO FERREIRA', party: 'PODE', role: UserRole.VEREADOR },
 ];
 
-// Simulação do Contexto de Sessão
+// Hook Simulado (Mock) para substituir o Contexto real neste ambiente
 const useSession = () => {
-  // Em produção, isso viria do seu SessionContext real
   return {
     session: {
       status: 'active',
       phase: SessionPhase.ORDEM_DO_DIA,
-      presence: DADOS_VEREADORES.reduce((acc, v) => ({ ...acc, [v.uid]: true }), {}), // Todos presentes
-      panelView: PanelView.VOTING, // Mude aqui para testar: READING, SPEAKER, MESSAGE, OFF
+      // Simula presença de todos
+      presence: DADOS_VEREADORES.reduce((acc, v) => ({ ...acc, [v.uid]: true }), {} as Record<string, boolean>),
+      // ALTERE AQUI PARA TESTAR OUTRAS TELAS: PanelView.READING, PanelView.SPEAKER, etc.
+      panelView: PanelView.VOTING, 
       panelMessage: "Sessão suspensa por 5 minutos.",
       votingOpen: true,
-      votes: { '1': VoteOption.SIM, '2': VoteOption.SIM, '3': VoteOption.NAO, '4': VoteOption.ABS }, // Alguns votos simulados
+      // Simula alguns votos
+      votes: { '1': VoteOption.SIM, '2': VoteOption.SIM, '3': VoteOption.NAO, '4': VoteOption.ABS } as Record<string, VoteOption>,
       currentProject: {
         id: 'proj-1',
         title: 'PROJETO DE LEI Nº 001/2024',
         description: 'Dispõe sobre a obrigatoriedade da instalação de painéis solares em prédios públicos e dá outras providências.',
         matterType: 'PROJETO DE LEI',
         author: { name: 'JOÃO OLÍMPIO' },
-        votingRules: { majority: 'Maioria Simples' }
-      },
+        votingRules: { majority: 'Maioria Simples' },
+        turns: 'Turno Único'
+      } as Project,
       currentSpeaker: {
           uid: '7', name: 'SARGENTO VAL', party: 'MDB', photoUrl: '', role: UserRole.VEREADOR
       },
@@ -63,100 +76,119 @@ const useSession = () => {
   };
 };
 
-// Componente Clock Simples
+// Componente Clock Auxiliar
 const Clock = ({ className = "" }) => {
   const [time, setTime] = useState(new Date());
   useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
   return <span className={className}>{time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>;
 };
 
-
 // --- 2. COMPONENTES DE VISUALIZAÇÃO (SUB-PAINÉIS) ---
 
-const OffPanel = () => (
-  <div className="w-full h-full flex flex-col items-center justify-center text-white p-8 bg-gray-900">
-    <div className="mb-8 p-6 bg-blue-900/20 rounded-full border-4 border-blue-500/30 animate-pulse">
-        <Users size={120} className="text-blue-400" />
+// Tela de Espera (Off)
+const OffPanel = () => {
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center text-white p-8 bg-gradient-to-b from-gray-900 to-black">
+      <div className="mb-12 p-8 bg-blue-600/10 rounded-full border-4 border-blue-500/30 shadow-[0_0_50px_rgba(37,99,235,0.2)] animate-pulse">
+          <Users size={140} className="text-blue-400" />
+      </div>
+      <h1 className="text-8xl font-black text-white font-sans tracking-tight mb-6 drop-shadow-2xl">SMART LEGIS</h1>
+      <h2 className="text-4xl text-gray-400 mb-16 uppercase tracking-[0.2em] font-light">Sistema de Apoio Legislativo</h2>
+      <div className="text-9xl font-bold font-mono text-white drop-shadow-lg tabular-nums">
+        <Clock />
+      </div>
     </div>
-    <h1 className="text-7xl font-black text-white font-sans tracking-tight mb-4">SMART LEGIS</h1>
-    <h2 className="text-3xl text-gray-400 mb-12 uppercase tracking-widest font-light">Câmara Municipal de Exemplo</h2>
-    <div className="text-8xl font-bold font-mono text-blue-500 drop-shadow-lg"><Clock /></div>
-  </div>
-);
+  );
+};
 
+// Tela de Mensagem (Avisos)
 const MessagePanel = ({ message }: { message: string | null }) => (
-  <div className="w-full h-full flex flex-col items-center justify-center text-white p-12 bg-yellow-900/90 backdrop-blur-sm">
-    <h1 className="text-7xl font-extrabold tracking-wider text-center text-yellow-400 mb-12 animate-pulse">⚠️ AVISO</h1>
-    <p className="text-5xl text-center text-white font-bold leading-relaxed max-w-4xl">{message || '...'}</p>
+  <div className="w-full h-full flex flex-col items-center justify-center text-white p-12 bg-yellow-900/95 backdrop-blur-sm">
+    <div className="bg-black/30 p-12 rounded-3xl border border-yellow-500/30 shadow-2xl max-w-5xl w-full text-center">
+        <Info size={80} className="mx-auto text-yellow-400 mb-6" />
+        <h1 className="text-6xl font-black tracking-wider text-yellow-400 mb-10 uppercase">Comunicado</h1>
+        <p className="text-5xl text-white font-bold leading-relaxed">{message || 'Aguarde um momento...'}</p>
+    </div>
   </div>
 );
 
-const ReadingPanel = ({ project }: { project: any }) => {
-  if (!project) return <div className="w-full h-full flex items-center justify-center text-white text-4xl bg-black">Nenhum projeto em leitura.</div>;
+// Tela de Leitura de Projeto (Espelhamento)
+const ReadingPanel = ({ project }: { project: Project | null }) => {
+  if (!project) return <div className="w-full h-full flex items-center justify-center text-white text-4xl bg-black">Aguardando matéria...</div>;
   const fullDate = new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' });
   
   return (
-    <div className="w-full h-full flex flex-col text-white p-8 bg-gradient-to-br from-gray-900 to-black font-sans">
-      <main className="flex-grow flex gap-8 items-stretch">
-        {/* Coluna Esquerda: Ementa */}
-        <div className="w-1/3 border-l-8 border-blue-500 bg-gray-800/40 p-10 rounded-r-3xl flex flex-col shadow-2xl backdrop-blur-sm">
-          <h3 className="text-blue-400 font-black text-4xl mb-8 border-b border-gray-700 pb-6 tracking-wide">
-            {(project.matterType || 'MATÉRIA').toUpperCase()}
+    <div className="w-full h-full flex flex-col text-white p-8 bg-gradient-to-br from-gray-900 via-slate-900 to-black font-sans">
+      <main className="flex-grow flex gap-10 items-stretch overflow-hidden">
+        {/* Coluna Esquerda: Ementa Scrollável */}
+        <div className="w-[35%] border-l-8 border-blue-500 bg-white/5 p-10 rounded-r-3xl flex flex-col shadow-2xl backdrop-blur-md">
+          <h3 className="text-blue-400 font-black text-3xl mb-8 border-b border-white/10 pb-6 tracking-wide uppercase">
+            {project.matterType}
           </h3>
-          <div className="flex-grow overflow-y-auto text-3xl leading-relaxed text-gray-300 font-medium scrollbar-hide">
-             <p>"{project.description}"</p>
+          <div className="flex-grow overflow-y-auto pr-4 custom-scrollbar">
+             <p className="text-3xl leading-relaxed text-gray-200 font-medium text-justify">{project.description}</p>
           </div>
         </div>
         
-        {/* Coluna Direita: Detalhes */}
-        <div className="w-2/3 flex flex-col items-center justify-center p-12 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-sm shadow-2xl">
-            <div className="text-center w-full space-y-14">
+        {/* Coluna Direita: Destaques */}
+        <div className="w-[65%] flex flex-col items-center justify-center p-12 bg-gradient-to-br from-white/5 to-transparent rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
+            {/* Background decorativo */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+            <div className="text-center w-full space-y-12 relative z-10">
                 <div>
                     <p className="text-2xl text-blue-300 uppercase tracking-[0.3em] font-bold mb-4">Em Discussão</p>
-                    <p className="text-7xl font-black text-white leading-tight px-4 drop-shadow-2xl">
+                    <p className="text-6xl lg:text-7xl font-black text-white leading-tight px-4 drop-shadow-2xl line-clamp-3">
                         {project.title.toUpperCase()}
                     </p>
                 </div>
                 
-                <div className="w-48 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent mx-auto"></div>
+                <div className="w-32 h-1.5 bg-blue-500 mx-auto rounded-full"></div>
                 
                 <div>
                     <p className="text-2xl text-gray-400 uppercase tracking-[0.2em] mb-4">Autoria</p>
                     <p className="text-5xl font-bold text-yellow-400 drop-shadow-lg">
-                        {project.author?.name.toUpperCase() || "EXECUTIVO"}
+                        {project.author?.name.toUpperCase()}
                     </p>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-16 pt-10 border-t border-white/10 w-full max-w-4xl mx-auto">
-                     <div className="text-center bg-black/20 py-4 rounded-xl">
-                        <p className="text-gray-500 uppercase text-sm font-bold mb-2">Quórum Necessário</p>
-                        <p className="text-3xl text-white font-bold">{project.votingRules?.majority.toUpperCase()}</p>
+                <div className="grid grid-cols-2 gap-12 pt-10 border-t border-white/10 w-full max-w-4xl mx-auto">
+                     <div className="text-center bg-black/20 py-6 rounded-2xl border border-white/5">
+                        <p className="text-gray-400 uppercase text-sm font-bold mb-2">Quórum</p>
+                        <p className="text-3xl text-white font-bold">{project.votingRules?.majority}</p>
                      </div>
-                     <div className="text-center bg-black/20 py-4 rounded-xl">
-                        <p className="text-gray-500 uppercase text-sm font-bold mb-2">Regime de Votação</p>
-                        <p className="text-3xl text-white font-bold">TURNO ÚNICO</p>
+                     <div className="text-center bg-black/20 py-6 rounded-2xl border border-white/5">
+                        <p className="text-gray-400 uppercase text-sm font-bold mb-2">Regime</p>
+                        <p className="text-3xl text-white font-bold">{project.turns || 'TURNO ÚNICO'}</p>
                      </div>
                 </div>
             </div>
         </div>
       </main>
-      <footer className="w-full text-center py-6 mt-6 text-xl text-gray-500 font-medium uppercase tracking-widest border-t border-gray-800">
-          Sessão Plenária Ordinária - {fullDate}
+      <footer className="w-full text-center py-4 mt-4 text-xl text-gray-500 font-medium uppercase tracking-widest">
+          {fullDate}
       </footer>
     </div>
   );
 };
 
-const SpeakerPanel = ({ currentSpeaker, speakerTimerEndTime }: { currentSpeaker: any, speakerTimerEndTime: number | null }) => {
+// Tela de Orador (Tribuna)
+const SpeakerPanel = ({ currentSpeaker, speakerTimerEndTime, speakerTimerPaused }: { currentSpeaker: any, speakerTimerEndTime: number | null, speakerTimerPaused: boolean }) => {
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
   
   useEffect(() => {
     if (!speakerTimerEndTime) { setRemainingTime(null); return; }
-    const interval = setInterval(() => {
-      const now = Date.now(); const diff = speakerTimerEndTime - now; setRemainingTime(Math.max(0, Math.floor(diff / 1000)));
-    }, 1000);
+    
+    const calculate = () => {
+        const now = Date.now();
+        const diff = speakerTimerEndTime - now;
+        setRemainingTime(Math.max(0, Math.floor(diff / 1000)));
+    };
+
+    calculate(); 
+    const interval = setInterval(calculate, 1000);
     return () => clearInterval(interval);
-  }, [speakerTimerEndTime]);
+  }, [speakerTimerEndTime, speakerTimerPaused]);
 
   const formatTime = (seconds: number | null): string => { 
       if (seconds === null) return '05:00'; 
@@ -167,39 +199,48 @@ const SpeakerPanel = ({ currentSpeaker, speakerTimerEndTime }: { currentSpeaker:
 
   if (!currentSpeaker) return <div className="w-full h-full flex items-center justify-center text-white text-4xl bg-black">Aguardando orador...</div>;
 
+  const isCriticalTime = remainingTime !== null && remainingTime < 30;
+
   return (
     <div className="w-full h-full flex flex-col items-center justify-center text-white p-8 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-800 via-gray-900 to-black">
-      <div className="bg-blue-600 text-white px-10 py-3 rounded-full font-bold tracking-[0.3em] mb-16 uppercase text-2xl shadow-[0_0_30px_rgba(37,99,235,0.5)]">
+      <div className="bg-blue-600 text-white px-12 py-3 rounded-full font-black tracking-[0.3em] mb-16 uppercase text-2xl shadow-[0_0_40px_rgba(37,99,235,0.4)] border border-blue-400/30">
           Tribuna Livre
       </div>
       
-      <div className="flex flex-col items-center mb-20 relative z-10">
-        <div className="w-72 h-72 rounded-full bg-gray-800 border-8 border-gray-700 mb-10 flex items-center justify-center shadow-2xl shadow-black overflow-hidden">
+      <div className="flex flex-col items-center mb-16 relative z-10">
+        <div className="w-80 h-80 rounded-full bg-gray-800 border-[6px] border-gray-700 mb-10 flex items-center justify-center shadow-2xl shadow-black overflow-hidden relative">
             {currentSpeaker.photoUrl ? (
                 <img src={currentSpeaker.photoUrl} alt="" className="w-full h-full object-cover" />
             ) : (
-                <User size={140} className="text-gray-600" />
+                <User size={160} className="text-gray-600" />
             )}
+            <div className="absolute inset-0 border-4 border-blue-500/30 rounded-full animate-ping opacity-20"></div>
         </div>
         <h1 className="text-8xl font-black tracking-tight text-white mb-6 text-center drop-shadow-2xl">{currentSpeaker.name}</h1>
-        <p className="text-5xl font-medium text-blue-400 bg-blue-900/30 px-8 py-3 rounded-xl border border-blue-500/30 backdrop-blur-sm">{currentSpeaker.party}</p>
+        <div className="bg-white/10 backdrop-blur-md px-10 py-4 rounded-2xl border border-white/10">
+             <p className="text-5xl font-bold text-blue-400">{currentSpeaker.party}</p>
+        </div>
       </div>
 
       <div className="relative group">
-        <div className={`font-mono text-[13rem] leading-none font-bold tabular-nums tracking-tighter drop-shadow-2xl transition-colors duration-500 ${remainingTime !== null && remainingTime < 30 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
+        <div className={`font-mono text-[14rem] leading-none font-bold tabular-nums tracking-tighter drop-shadow-2xl transition-all duration-500 ${isCriticalTime ? 'text-red-500 scale-110' : 'text-white'} ${speakerTimerPaused ? 'opacity-50' : 'opacity-100'}`}>
             {formatTime(remainingTime)}
         </div>
+        {speakerTimerPaused && (
+            <div className="absolute inset-0 flex items-center justify-center">
+                <span className="bg-yellow-500 text-black text-2xl font-bold px-4 py-1 rounded uppercase tracking-widest">Pausado</span>
+            </div>
+        )}
       </div>
       
-      {remainingTime !== null && remainingTime < 30 && (
-          <p className="mt-8 text-red-500 font-black text-3xl animate-bounce uppercase tracking-[0.5em]">Tempo Esgotando</p>
+      {isCriticalTime && !speakerTimerPaused && (
+          <p className="mt-8 text-red-500 font-black text-4xl animate-bounce uppercase tracking-[0.5em]">Tempo Esgotando</p>
       )}
     </div>
   );
 };
 
-
-// --- 3. COMPONENTES PRINCIPAIS DO PAINEL (GRID DE VEREADORES) ---
+// --- 3. COMPONENTES DO GRID (VISÃO PADRÃO) ---
 
 const CardVereador = ({ member, session }: { member: UserProfile, session: any }) => {
   const isPresent = session.presence[member.uid];
@@ -228,19 +269,19 @@ const CardVereador = ({ member, session }: { member: UserProfile, session: any }
             bgStatus = "bg-green-600"; 
             textoStatus = "SIM"; 
             corTextoStatus = "text-white"; 
-            sombra = "shadow-[0_0_20px_rgba(34,197,94,0.3)] scale-[1.02] z-10";
+            sombra = "shadow-[0_0_25px_rgba(34,197,94,0.4)] scale-[1.02] z-10";
          } else if (vote === VoteOption.NAO) {
             corBorda = "border-red-500"; 
             bgStatus = "bg-red-600"; 
             textoStatus = "NÃO"; 
             corTextoStatus = "text-white"; 
-            sombra = "shadow-[0_0_20px_rgba(239,68,68,0.3)] scale-[1.02] z-10";
+            sombra = "shadow-[0_0_25px_rgba(239,68,68,0.4)] scale-[1.02] z-10";
          } else if (vote === VoteOption.ABS) {
             corBorda = "border-yellow-500"; 
             bgStatus = "bg-yellow-500"; 
             textoStatus = "ABSTENÇÃO"; 
             corTextoStatus = "text-black"; 
-            sombra = "shadow-[0_0_20px_rgba(234,179,8,0.3)] scale-[1.02] z-10";
+            sombra = "shadow-[0_0_25px_rgba(234,179,8,0.4)] scale-[1.02] z-10";
          } else {
             corBorda = "border-blue-500/50"; 
             bgStatus = "bg-gray-800"; 
@@ -269,22 +310,25 @@ const CardVereador = ({ member, session }: { member: UserProfile, session: any }
      corBorda = "border-gray-800"; 
      bgStatus = "bg-transparent"; 
      borderTopStatus = "border-0"; 
-     cardBg = "bg-gray-900/20 backdrop-blur-sm opacity-60"; // Mais apagado se ausente
+     cardBg = "bg-gray-900/20 backdrop-blur-sm opacity-60"; 
   }
 
   return (
-    <div className={`flex flex-col rounded-2xl border-2 ${corBorda} ${cardBg} transition-all duration-500 ease-out ${sombra} h-full overflow-hidden relative`}>
+    <div className={`flex flex-col rounded-2xl border-2 ${corBorda} ${cardBg} transition-all duration-500 ease-out ${sombra} h-full overflow-hidden relative group`}>
       
-      {/* Área Principal: Ícone + Texto */}
-      <div className="flex-1 flex items-center px-4 gap-4 min-h-0 py-2 relative z-10">
+      {/* Área Principal */}
+      <div className="flex-1 flex items-center px-5 gap-5 min-h-0 py-2 relative z-10">
         
-        {/* Ícone (Esquerda) - Tamanho fixo e destacado */}
-        <div className={`w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center border ${iconeBg}`}>
-          <User size={28} strokeWidth={1.5} />
+        {/* Foto / Ícone */}
+        <div className={`w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center border ${iconeBg} overflow-hidden`}>
+          {member.photoUrl && member.photoUrl.startsWith('http') ? (
+              <img src={member.photoUrl} alt="" className={`w-full h-full object-cover ${!isPresent ? 'grayscale opacity-50' : ''}`} />
+          ) : (
+              <User size={32} strokeWidth={1.5} />
+          )}
         </div>
 
-        {/* Bloco de Texto (Direita) - Flex Column Centralizado Verticalmente */}
-        {/* ALINHAMENTO À ESQUERDA PARA TODOS OS VEREADORES */}
+        {/* Bloco de Texto - Centralizado Verticalmente */}
         <div className="flex-1 min-w-0 h-full flex flex-col justify-center items-start text-left">
             
             {/* Cargo - Slot reservado para manter altura constante e alinhamento na grade */}
@@ -361,7 +405,7 @@ const ResumoVotacao = ({ session, members }: { session: any, members: any[] }) =
   );
 };
 
-// --- Página Principal ---
+// --- Página Principal do Painel ---
 const PanelPage: React.FC = () => {
     // Hook simulado para demonstração. No projeto real, use: const { session, councilMembers } = useSession();
     const { session, councilMembers } = useSession();
@@ -372,15 +416,16 @@ const PanelPage: React.FC = () => {
         return () => clearInterval(t); 
     }, []);
 
-    // Roteamento de Visão do Painel (Espelhamento)
+    // Filtra membros da legislatura
+    const activeMembers = councilMembers.filter(m => session.legislatureMembers.includes(m.uid));
+
+    // 1. Roteamento de Telas (Espelhamento)
     if (session.panelView === PanelView.READING) return <ReadingPanel project={session.currentProject} />;
-    if (session.panelView === PanelView.SPEAKER) return <SpeakerPanel currentSpeaker={session.currentSpeaker} speakerTimerEndTime={session.speakerTimerEndTime} />;
+    if (session.panelView === PanelView.SPEAKER) return <SpeakerPanel currentSpeaker={session.currentSpeaker} speakerTimerEndTime={session.speakerTimerEndTime} speakerTimerPaused={session.speakerTimerPaused} />;
     if (session.panelView === PanelView.MESSAGE) return <MessagePanel message={session.panelMessage} />;
     if (session.panelView === PanelView.OFF) return <OffPanel />;
 
-    // Visão Padrão (Grid de Votação/Presença)
-    const activeMembers = councilMembers; // Assume que todos são da legislatura atual
-
+    // 2. Visão Padrão (Grid)
     return (
         <div className="h-screen bg-black text-white font-sans flex flex-col p-4 md:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0a0a] to-black overflow-hidden relative selection:bg-blue-500/30">
              
