@@ -36,7 +36,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setUser(foundUser);
             
             // Register presence if user is a council member
-            // FIX: Pass user name to registerPresenceFn for logging. Also, register presence for the President.
             if (foundUser.role === UserRole.VEREADOR || foundUser.role === UserRole.PRESIDENTE) {
                 registerPresenceFn(foundUser.uid, foundUser.name);
             }

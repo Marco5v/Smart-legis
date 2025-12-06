@@ -1,11 +1,11 @@
 
+
 import React from 'react';
 import { UserProfile } from '../types';
 
 interface CouncilMemberCardProps {
     member: UserProfile;
     isPresent: boolean;
-    // FIX: Added 'isConfirmedAbsent' to props to fix type error and allow for visual distinction of confirmed absences.
     isConfirmedAbsent?: boolean;
 }
 

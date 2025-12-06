@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { Project, PanelView, VotingType, MajorityType, UserProfile, ProjectWorkflowStatus, SessionPhase, ProjectPhase } from '../types';
 import { OperationalChat } from '../components/common/OperationalChat';
 import Tabs from '../components/common/Tabs';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type ProjectWithChildren = Project & { children: ProjectWithChildren[] };
 
@@ -84,9 +85,7 @@ const PresidenteDashboard: React.FC = () => {
     };
 
     const projetosPauta = useMemo(() => projects.filter(p => p.workflowStatus === ProjectWorkflowStatus.PRONTO_PARA_PAUTA), [projects]);
-    // FIX: Use ProjectPhase enum for filtering projects by phase to avoid type comparison errors.
     const projetosExpedienteOriginal = useMemo(() => buildHierarchy(projects.filter(p => p.projectPhase === ProjectPhase.EXPEDIENTE)), [projects]);
-    // FIX: Use ProjectPhase enum for filtering projects by phase to avoid type comparison errors.
     const projetosOrdemDoDiaOriginal = useMemo(() => buildHierarchy(projects.filter(p => p.projectPhase === ProjectPhase.ORDEM_DO_DIA)), [projects]);
     
     const [expedienteOrdenado, setExpedienteOrdenado] = useState<ProjectWithChildren[]>([]);
@@ -197,7 +196,6 @@ const PresidenteDashboard: React.FC = () => {
         if (panelMessage) {
             setPanelMessage(panelMessage);
             setPhase(SessionPhase.INICIAL); // Or another appropriate phase
-            // FIX: Add missing function `setPanelView` to `useSession` destructuring.
             setPanelView(PanelView.MESSAGE);
         }
     };
@@ -205,7 +203,6 @@ const PresidenteDashboard: React.FC = () => {
     const handleRemoveMessage = () => {
         setPanelMessage(null);
         setLocalPanelMessage('');
-        // FIX: Add missing function `setPanelView` to `useSession` destructuring.
         setPanelView(PanelView.PRESENCE);
     };
     
@@ -215,29 +212,29 @@ const PresidenteDashboard: React.FC = () => {
     const PointOfOrderAlert: React.FC = () => {
         if (!session.pointOfOrderRequest?.active) return null;
         return (
-            <div className="bg-orange-900 border border-orange-500 text-orange-300 p-4 rounded-lg mb-4 flex justify-between items-center animate-pulse">
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="bg-orange-900 border border-orange-500 text-orange-300 p-4 rounded-lg mb-4 flex justify-between items-center">
                 <div className="flex items-center">
-                    <HelpCircle className="mr-3"/>
+                    <HelpCircle className="mr-3 animate-pulse"/>
                     <p><span className="font-bold">{session.pointOfOrderRequest.from.name}</span> solicita uma Questão de Ordem.</p>
                 </div>
                 <Button onClick={() => resolvePointOfOrder()} variant="secondary" size="sm"><CheckCircle size={16} className="mr-1"/> Ciente</Button>
-            </div>
+            </motion.div>
         )
     }
     
     const VerificationRequestAlert: React.FC = () => {
         if (!session.verificationRequest?.active || !user) return null;
         return (
-             <div className="bg-blue-900 border border-blue-500 text-blue-300 p-4 rounded-lg mb-4 flex justify-between items-center animate-pulse">
+             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="bg-blue-900 border border-blue-500 text-blue-300 p-4 rounded-lg mb-4 flex justify-between items-center">
                 <div className="flex items-center">
-                    <AlertTriangle className="mr-3"/>
+                    <AlertTriangle className="mr-3 animate-pulse"/>
                     <p><span className="font-bold">{session.verificationRequest.from.name}</span> pede verificação de votação.</p>
                 </div>
                 <div className="flex gap-2">
                     <Button onClick={() => resolveVerification(true, user.name)} variant="success" size="sm"><CheckCircle size={16} className="mr-1"/> Deferir</Button>
                     <Button onClick={() => resolveVerification(false, user.name)} variant="danger" size="sm"><X size={16} className="mr-1"/> Indeferir</Button>
                 </div>
-            </div>
+            </motion.div>
         )
     }
 
@@ -281,7 +278,6 @@ const PresidenteDashboard: React.FC = () => {
             description: description,
             author: user as UserProfile,
             votingStatus: 'pending',
-            // FIX: Use enum member instead of string literal
             workflowStatus: ProjectWorkflowStatus.PRONTO_PARA_PAUTA,
             votingRules: {
                 type: VotingType.SIMBOLICA,
@@ -319,16 +315,13 @@ const PresidenteDashboard: React.FC = () => {
                         <div className="flex gap-4 items-center">
                             <p className="text-lg">Sessão: <span className={`font-bold uppercase ${session.status === 'active' ? 'text-green-400 animate-pulse' : 'text-red-400'}`}>{session.status === 'active' ? 'ATIVA' : 'INATIVA'}</span></p>
                             {session.status === 'inactive' ? (
-                                // FIX: Pass user name to startSession. It expects a userName for logging.
                                 <Button onClick={() => user && startSession(user.name)} disabled={!quorumMet} size="lg" className="flex-1 py-4 text-xl">
                                     <Play size={24} className="mr-3" /> Iniciar Sessão ({presentCount}/{legislatureConfig.totalMembers})
                                 </Button>
                             ) : (
                                 <>
-                                    {/* FIX: Use enum members for setting phase */}
                                     <Button onClick={() => setPhase(SessionPhase.EXPEDIENTE)} variant={session.phase === SessionPhase.EXPEDIENTE ? 'primary' : 'secondary'}>Expediente</Button>
                                     <Button onClick={() => setPhase(SessionPhase.ORDEM_DO_DIA)} variant={session.phase === SessionPhase.ORDEM_DO_DIA ? 'primary' : 'secondary'}>Ordem do Dia</Button>
-                                    {/* FIX: Pass user name to endSession. It expects a userName for logging. */}
                                     <Button onClick={() => user && endSession(user.name)} variant="danger">
                                         <XCircle size={16} className="mr-2" /> Encerrar
                                     </Button>
@@ -338,8 +331,12 @@ const PresidenteDashboard: React.FC = () => {
                         {!quorumMet && session.status === 'inactive' && <p className="text-xs text-yellow-400 text-center mt-2">Quórum mínimo de {legislatureConfig.quorumToOpen} para abertura não atingido.</p>}
                     </Card>
                     
-                    <PointOfOrderAlert />
-                    <VerificationRequestAlert />
+                    <AnimatePresence>
+                        <PointOfOrderAlert />
+                    </AnimatePresence>
+                    <AnimatePresence>
+                        <VerificationRequestAlert />
+                    </AnimatePresence>
 
                     <Card title="Controle de Votação">
                         <div className="text-center mb-4 p-3 bg-sapv-blue-dark rounded-md">

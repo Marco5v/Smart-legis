@@ -177,7 +177,6 @@ export interface OperationalChatMessage {
     message: string;
 }
 
-// FIX: Add missing types for older components
 export type SessionType = 'Ordinária' | 'Extraordinária' | 'Solene';
 
 export interface SessionConfig {
@@ -192,7 +191,6 @@ export interface SessionState {
     phase: SessionPhase;
     startTime: number | null;
     
-    // FIX: Add missing properties for older components
     pauseTime: number | null;
     totalPausedDuration: number;
     sessionType: SessionType;
