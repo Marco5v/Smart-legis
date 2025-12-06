@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, CheckCircle, XCircle, MinusCircle, Mic, Users, Play, FileText } from 'lucide-react';
+import { User, Users, Play, FileText } from 'lucide-react';
 import { useSession } from '../context/SessionContext';
 import { PanelView, SessionPhase, SessionStatus, VoteOption } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Sub-componentes para o novo painel
 const CardVereador: React.FC<{vereador: any, fase: 'fechada' | 'chamada' | 'leitura' | 'votacao'}> = ({ vereador, fase }) => {
   let corBorda = "border-gray-700", bgStatus = "bg-gray-800", textoStatus = "\u00A0", corTextoStatus = "text-gray-500", sombra = "shadow-sm", iconeBg = "bg-gray-800 border-gray-700 text-gray-600", borderTopStatus = "border-t border-black/20", corNome = "text-white";
   if (vereador.presente) corNome = "text-green-500"; 

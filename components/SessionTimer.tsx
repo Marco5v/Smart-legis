@@ -18,8 +18,6 @@ const SessionTimer: React.FC<SessionTimerProps> = ({ startTime, isPaused, pauseT
 
         const interval = setInterval(() => {
             if (isPaused) {
-                // Se estiver pausado, o tempo não avança. O tempo decorrido é fixo.
-                // pauseTime não pode ser nulo se isPaused for verdadeiro
                 if(pauseTime) {
                     const elapsed = (pauseTime - startTime - totalPausedDuration) / 1000;
                     setElapsedSeconds(Math.floor(elapsed));
@@ -41,7 +39,7 @@ const SessionTimer: React.FC<SessionTimerProps> = ({ startTime, isPaused, pauseT
     };
 
     return (
-        <div className={`text-3xl md:text-5xl font-mono font-bold ${isPaused ? 'text-yellow-400' : 'text-sapv-highlight'}`}>
+        <div className={`text-3xl md:text-5xl font-mono font-bold ${isPaused ? 'text-yellow-500' : 'text-sapv-highlight'}`}>
             {formatTime(elapsedSeconds)}
         </div>
     );
