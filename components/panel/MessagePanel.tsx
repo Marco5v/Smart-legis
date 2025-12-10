@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Info } from 'lucide-react';
 
 interface MessagePanelProps {
-    message: string;
+    message: string | null;
 }
 
 const MessagePanel: React.FC<MessagePanelProps> = ({ message }) => {

@@ -1,45 +1,37 @@
+
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../../types';
 import { User } from 'lucide-react';
-import { useSession } from '../../context/SessionContext';
 
 interface SpeakerPanelProps {
-    currentSpeaker: UserProfile;
+    currentSpeaker: UserProfile | null;
     speakerTimerEndTime: number | null;
+    speakerTimerPaused: boolean;
 }
 
-const SpeakerPanel: React.FC<SpeakerPanelProps> = ({ currentSpeaker, speakerTimerEndTime }) => {
-  const { session } = useSession();
-  const { speakerTimerPaused } = session;
+const SpeakerPanel: React.FC<SpeakerPanelProps> = ({ currentSpeaker, speakerTimerEndTime, speakerTimerPaused }) => {
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
   
   useEffect(() => {
-    if (!speakerTimerEndTime) {
-        setRemainingTime(null);
-        return;
-    }
-
+    if (!speakerTimerEndTime) { setRemainingTime(null); return; }
     const calculate = () => {
         const now = Date.now();
         const diff = speakerTimerEndTime - now;
         setRemainingTime(Math.max(0, Math.floor(diff / 1000)));
     };
-
-    if (!speakerTimerPaused) {
-        calculate(); 
-        const interval = setInterval(calculate, 1000);
-        return () => clearInterval(interval);
-    } else {
-        calculate();
-    }
+    calculate(); 
+    const interval = setInterval(calculate, 1000);
+    return () => clearInterval(interval);
   }, [speakerTimerEndTime, speakerTimerPaused]);
 
   const formatTime = (seconds: number | null): string => { 
-      if (seconds === null) return '00:00'; 
+      if (seconds === null) return '05:00'; 
       const mins = Math.floor(seconds / 60).toString().padStart(2, '0'); 
       const secs = (seconds % 60).toString().padStart(2, '0'); 
       return `${mins}:${secs}`; 
   };
+
+  if (!currentSpeaker) return <div className="w-full h-full flex items-center justify-center text-white text-4xl bg-black">Aguardando orador...</div>;
 
   const isCriticalTime = remainingTime !== null && remainingTime < 30;
 
@@ -51,7 +43,7 @@ const SpeakerPanel: React.FC<SpeakerPanelProps> = ({ currentSpeaker, speakerTime
       <div className="flex flex-col items-center mb-16 relative z-10">
         <div className="w-80 h-80 rounded-full bg-gray-800 border-[6px] border-gray-700 mb-10 flex items-center justify-center shadow-2xl shadow-black overflow-hidden relative">
             {currentSpeaker.photoUrl ? (
-                <img src={currentSpeaker.photoUrl} alt={currentSpeaker.name} className="w-full h-full object-cover" />
+                <img src={currentSpeaker.photoUrl} alt="" className="w-full h-full object-cover" />
             ) : (
                 <User size={160} className="text-gray-600" />
             )}
@@ -78,4 +70,5 @@ const SpeakerPanel: React.FC<SpeakerPanelProps> = ({ currentSpeaker, speakerTime
     </div>
   );
 };
+
 export default SpeakerPanel;

@@ -1,11 +1,13 @@
+
 import React from 'react';
 import { Project } from '../../types';
 
 interface ReadingPanelProps {
-    project: Project;
+    project: Project | null;
 }
 
 const ReadingPanel: React.FC<ReadingPanelProps> = ({ project }) => {
+  if (!project) return <div className="w-full h-full flex items-center justify-center text-white text-4xl bg-black">Aguardando matéria...</div>;
   const fullDate = new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' });
   
   return (
