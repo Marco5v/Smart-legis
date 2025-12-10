@@ -42,18 +42,17 @@ const DADOS_VEREADORES: UserProfile[] = [
   { uid: '12', name: 'ADRIANO FERREIRA', party: 'PODE', role: UserRole.VEREADOR },
 ];
 
-// Hook Simulado (Mock) para substituir o Contexto real neste ambiente
+// Hook Simulado (Mock)
 const useSession = () => {
   return {
     session: {
       status: 'active',
       phase: SessionPhase.ORDEM_DO_DIA,
       presence: DADOS_VEREADORES.reduce((acc, v) => ({ ...acc, [v.uid]: true }), {} as Record<string, boolean>),
-      // Use isso para testar as telas: PanelView.VOTING, PanelView.READING, PanelView.SPEAKER
+      // MOCK: Altere aqui para testar as telas (VOTING, READING, SPEAKER, MESSAGE, OFF)
       panelView: PanelView.VOTING, 
       panelMessage: "Sessão suspensa por 5 minutos.",
       votingOpen: true,
-      // Simulando alguns votos para visualização
       votes: { '1': VoteOption.SIM, '2': VoteOption.SIM, '3': VoteOption.NAO, '4': VoteOption.ABS } as Record<string, VoteOption>,
       currentProject: {
         id: 'proj-1',
@@ -171,13 +170,11 @@ const SpeakerPanel = ({ currentSpeaker, speakerTimerEndTime, speakerTimerPaused 
   
   useEffect(() => {
     if (!speakerTimerEndTime) { setRemainingTime(null); return; }
-    
     const calculate = () => {
         const now = Date.now();
         const diff = speakerTimerEndTime - now;
         setRemainingTime(Math.max(0, Math.floor(diff / 1000)));
     };
-
     calculate(); 
     const interval = setInterval(calculate, 1000);
     return () => clearInterval(interval);
@@ -199,7 +196,6 @@ const SpeakerPanel = ({ currentSpeaker, speakerTimerEndTime, speakerTimerPaused 
       <div className="bg-blue-600 text-white px-12 py-3 rounded-full font-black tracking-[0.3em] mb-16 uppercase text-2xl shadow-[0_0_40px_rgba(37,99,235,0.4)] border border-blue-400/30">
           Tribuna Livre
       </div>
-      
       <div className="flex flex-col items-center mb-16 relative z-10">
         <div className="w-80 h-80 rounded-full bg-gray-800 border-[6px] border-gray-700 mb-10 flex items-center justify-center shadow-2xl shadow-black overflow-hidden relative">
             {currentSpeaker.photoUrl ? (
@@ -214,7 +210,6 @@ const SpeakerPanel = ({ currentSpeaker, speakerTimerEndTime, speakerTimerPaused 
              <p className="text-5xl font-bold text-blue-400">{currentSpeaker.party}</p>
         </div>
       </div>
-
       <div className="relative group">
         <div className={`font-mono text-[14rem] leading-none font-bold tabular-nums tracking-tighter drop-shadow-2xl transition-all duration-500 ${isCriticalTime ? 'text-red-500 scale-110' : 'text-white'} ${speakerTimerPaused ? 'opacity-50' : 'opacity-100'}`}>
             {formatTime(remainingTime)}
@@ -225,7 +220,6 @@ const SpeakerPanel = ({ currentSpeaker, speakerTimerEndTime, speakerTimerPaused 
             </div>
         )}
       </div>
-      
       {isCriticalTime && !speakerTimerPaused && (
           <p className="mt-8 text-red-500 font-black text-4xl animate-bounce uppercase tracking-[0.5em]">Tempo Esgotando</p>
       )}
@@ -235,10 +229,9 @@ const SpeakerPanel = ({ currentSpeaker, speakerTimerEndTime, speakerTimerPaused 
 
 // --- 3. COMPONENTES DO GRID (VISÃO PADRÃO) ---
 
-// FIX: Define a props interface and use React.FC to fix the 'key' prop error.
 interface CardVereadorProps {
-  member: UserProfile;
-  session: any;
+    member: UserProfile;
+    session: any;
 }
 
 const CardVereador: React.FC<CardVereadorProps> = ({ member, session }) => {
@@ -246,106 +239,94 @@ const CardVereador: React.FC<CardVereadorProps> = ({ member, session }) => {
   const vote = session.votes[member.uid];
   const isVoting = session.votingOpen || session.panelView === PanelView.VOTING;
   
-  // --- ESTILOS BASE DO CARD ---
+  // --- ESTILOS BASE ---
   let corBorda = "border-gray-700/50";
   let sombra = "shadow-lg";
   let iconeBg = "bg-gray-800 border-gray-700 text-gray-500";
   let corNome = "text-white";
   let cardBg = "bg-gradient-to-br from-gray-800/60 to-gray-900/95 backdrop-blur-xl";
 
-  // --- ÍCONE DE VOTAÇÃO VS AVATAR ---
-  let IconArea = (
-      <>
-        {member.photoUrl && member.photoUrl.startsWith('http') ? (
-            <img src={member.photoUrl} alt="" className={`w-full h-full object-cover ${!isPresent ? 'grayscale opacity-50' : ''}`} />
-        ) : (
-            <User size={32} strokeWidth={1.5} />
-        )}
-      </>
-  );
+  // --- LÓGICA DO ÍCONE (AVATAR OU VOTO) ---
+  let IconArea;
 
   if (isPresent) {
     corNome = "text-green-400";
     iconeBg = "bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 text-gray-300 shadow-inner";
 
-    if (isVoting) {
+    // Se estiver em votação E tiver voto, mostra o ícone de voto
+    if (isVoting && vote) {
          if (vote === VoteOption.SIM) {
             corBorda = "border-green-500"; 
-            sombra = "shadow-[0_0_25px_rgba(34,197,94,0.4)] scale-[1.02] z-10";
-            
-            // LIKE VERDE (YOUTUBE STYLE)
+            sombra = "shadow-[0_0_30px_rgba(34,197,94,0.5)] scale-105 z-10 ring-2 ring-green-400 ring-offset-2 ring-offset-black";
             iconeBg = "bg-green-600 border-green-500 text-white";
-            IconArea = <ThumbsUp size={32} strokeWidth={3} fill="currentColor" />;
-
+            IconArea = <ThumbsUp size={36} strokeWidth={3} fill="currentColor" />;
          } else if (vote === VoteOption.NAO) {
             corBorda = "border-red-500"; 
-            sombra = "shadow-[0_0_25px_rgba(239,68,68,0.4)] scale-[1.02] z-10";
-
-            // DISLIKE VERMELHO
+            sombra = "shadow-[0_0_30px_rgba(239,68,68,0.5)] scale-105 z-10 ring-2 ring-red-400 ring-offset-2 ring-offset-black";
             iconeBg = "bg-red-600 border-red-500 text-white";
-            IconArea = <ThumbsDown size={32} strokeWidth={3} fill="currentColor" />;
-
+            IconArea = <ThumbsDown size={36} strokeWidth={3} fill="currentColor" />;
          } else if (vote === VoteOption.ABS) {
             corBorda = "border-yellow-500"; 
-            sombra = "shadow-[0_0_25px_rgba(234,179,8,0.4)] scale-[1.02] z-10";
-
-            // ABSTENÇÃO AMARELO
+            sombra = "shadow-[0_0_30px_rgba(234,179,8,0.5)] scale-105 z-10 ring-2 ring-yellow-400 ring-offset-2 ring-offset-black";
             iconeBg = "bg-yellow-500 border-yellow-400 text-black";
-            IconArea = <MinusCircle size={32} strokeWidth={3} />;
-            
-         } else {
-            corBorda = "border-blue-500/50"; 
-            // Aguardando voto... mantém avatar padrão piscando levemente
-            iconeBg += " animate-pulse ring-2 ring-blue-500/30";
+            IconArea = <MinusCircle size={36} strokeWidth={3} />;
          }
     } else {
-         // Apenas presente (Chamada ou Sessão normal)
-         corBorda = "border-gray-600/50"; 
+         // Se não votou ou não é votação, mostra o Avatar
+         if (isVoting) { // Votação aberta mas não votou ainda
+             corBorda = "border-blue-500/50";
+             iconeBg += " animate-pulse ring-2 ring-blue-500/30";
+         } else { // Apenas presente
+             corBorda = "border-gray-600/50"; 
+         }
+         
+         IconArea = member.photoUrl && member.photoUrl.startsWith('http') ? (
+            <img src={member.photoUrl} alt="" className={`w-full h-full object-cover`} />
+         ) : (
+            <User size={32} strokeWidth={1.5} />
+         );
     }
   } else {
      // AUSENTE
-     if (session.status === 'inactive' || session.phase === SessionPhase.INICIAL) { 
-         corNome = "text-gray-500"; 
-     } else { 
-         corNome = "text-red-500"; 
-     }
+     corNome = (session.status === 'inactive' || session.phase === SessionPhase.INICIAL) ? "text-gray-500" : "text-red-500";
      corBorda = "border-gray-800"; 
-     cardBg = "bg-gray-900/20 backdrop-blur-sm opacity-60"; 
+     cardBg = "bg-gray-900/20 backdrop-blur-sm opacity-60";
+     IconArea = <User size={32} strokeWidth={1.5} className="opacity-50"/>;
   }
 
   return (
     <div className={`flex flex-col justify-center rounded-2xl border-2 ${corBorda} ${cardBg} transition-all duration-500 ease-out ${sombra} h-full overflow-hidden relative group p-4`}>
       
-      {/* Área Principal - Sem tarja inferior, tudo centralizado */}
+      {/* Container Principal */}
       <div className="flex items-center gap-5 w-full">
         
-        {/* Foto / Ícone (Vira Voto quando votado) */}
-        <div className={`w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center border ${iconeBg} overflow-hidden transition-all duration-300 transform`}>
+        {/* Foto / Ícone de Voto */}
+        <div className={`w-20 h-20 rounded-2xl flex-shrink-0 flex items-center justify-center border ${iconeBg} overflow-hidden transition-all duration-300 transform`}>
           {IconArea}
         </div>
 
-        {/* Bloco de Texto - Centralizado Verticalmente e Alinhado à Esquerda */}
+        {/* Bloco de Texto */}
         <div className="flex-1 min-w-0 flex flex-col justify-center items-start text-left">
             
             {/* Cargo */}
-            <div className="mb-0.5 min-h-[16px] flex items-end w-full justify-start">
+            <div className="mb-1 min-h-[16px] flex items-end w-full justify-start">
                 {member.boardRole ? (
-                    <span className="text-[10px] md:text-[11px] text-yellow-400 font-black uppercase tracking-wider leading-none drop-shadow-md">
+                    <span className="text-[11px] md:text-[12px] text-yellow-400 font-black uppercase tracking-wider leading-none drop-shadow-md">
                         {member.boardRole.toUpperCase()}
                     </span>
                 ) : ( 
-                    <span className="text-[10px] md:text-[11px] opacity-0 select-none leading-none">.</span> 
+                    <span className="text-[11px] opacity-0 select-none leading-none">.</span> 
                 )}
             </div>
 
             {/* Nome */}
-            <div className={`text-sm md:text-[1.1rem] font-bold uppercase tracking-wide leading-tight text-left break-words w-full ${corNome} drop-shadow-sm`}>
+            <div className={`text-base md:text-[1.25rem] font-bold uppercase tracking-wide leading-tight text-left break-words w-full ${corNome} drop-shadow-sm`}>
                 {member.name}
             </div>
 
             {/* Partido */}
-            <div className="mt-1 flex w-full justify-start">
-                <span className={`text-[10px] font-bold inline-block px-2 py-0.5 rounded border ${isPresent ? 'bg-gray-800/80 border-gray-600 text-blue-200' : 'bg-gray-900 border-gray-800 text-gray-700'}`}>
+            <div className="mt-2 flex w-full justify-start">
+                <span className={`text-[11px] font-bold inline-block px-3 py-0.5 rounded border ${isPresent ? 'bg-gray-800/80 border-gray-600 text-blue-200' : 'bg-gray-900 border-gray-800 text-gray-700'}`}>
                     {member.party}
                 </span>
             </div>
@@ -415,7 +396,7 @@ const PanelPage: React.FC = () => {
 
     // Visão Padrão (Grid)
     return (
-        <div className="h-screen bg-black text-white font-sans flex flex-col p-4 md:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0a0a] to-black overflow-hidden relative selection:bg-blue-500/30">
+        <div className="h-screen bg-black text-white font-sans flex flex-col p-6 md:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0a0a] to-black overflow-hidden relative selection:bg-blue-500/30">
              
              {/* Cabeçalho */}
              <header className="flex justify-between items-center bg-gray-900/60 backdrop-blur-xl px-8 py-5 rounded-3xl border-b border-white/5 mb-6 shadow-2xl shrink-0 z-10">
@@ -438,7 +419,7 @@ const PanelPage: React.FC = () => {
                   </div>
              </header>
 
-             {/* Área de Destaque: Matéria em Votação */}
+             {/* Área de Destaque: Matéria em Votação (Opcional, acima do grid) */}
              {session.currentProject && session.votingOpen && (
                 <div className="mb-6 flex gap-6 h-36 shrink-0 animate-in fade-in slide-in-from-top-4 duration-500">
                     <div className="flex-1 bg-gray-800/40 backdrop-blur-xl px-8 py-5 rounded-2xl border-l-8 border-blue-500 flex flex-col justify-center shadow-2xl ring-1 ring-white/5">
@@ -456,8 +437,9 @@ const PanelPage: React.FC = () => {
              )}
 
              {/* Grid de Vereadores */}
-             <div className="flex-1 min-h-0 overflow-hidden pb-2 relative z-0">
-                <div className="grid grid-cols-3 lg:grid-cols-4 gap-4 h-full content-stretch">
+             <div className="flex-1 min-h-0 overflow-hidden pb-4 relative z-0">
+                {/* Aumentei o padding do container do grid para evitar cortes */}
+                <div className="grid grid-cols-3 lg:grid-cols-4 gap-4 h-full content-stretch p-2">
                     {activeMembers.map(ver => ( 
                         <CardVereador key={ver.uid} member={ver} session={session} /> 
                     ))}
@@ -465,7 +447,7 @@ const PanelPage: React.FC = () => {
              </div>
 
              {/* Rodapé com Totais */}
-             <div className="flex-shrink-0 mt-4 mb-2">
+             <div className="flex-shrink-0 mt-2 mb-2">
                 <ResumoVotacao session={session} members={activeMembers} />
              </div>
         </div>

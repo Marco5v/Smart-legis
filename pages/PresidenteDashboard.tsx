@@ -26,7 +26,7 @@ const PresidenteDashboard: React.FC = () => {
         resolvePointOfOrder, setPhase, toggleMicrophone, muteAllMicrophones,
         startSymbolicVoting, resolveSymbolicVote, resolveVerification,
         councilMembers, setDefaultSpeakerDuration, setPanelMessage,
-        setPanelView
+        setPanelView, requestPointOfOrder
     } = useSession();
     
     const [pautaTab, setPautaTab] = useState<'Expediente' | 'Ordem do Dia'>('Expediente');
@@ -432,6 +432,17 @@ const PresidenteDashboard: React.FC = () => {
                                 <Mic size={20} className="mr-2"/> Conceder a Palavra ao Próximo
                             </Button>
                         )}
+                         <div className="border-t border-sapv-gray-dark mt-6 pt-4">
+                            <Button 
+                                onClick={() => user && requestPointOfOrder(user)} 
+                                variant="secondary" 
+                                className="w-full bg-orange-600 hover:bg-orange-700"
+                                disabled={session.pointOfOrderRequest?.active}
+                            >
+                                <HelpCircle size={16} className="mr-2"/> 
+                                {session.pointOfOrderRequest?.active ? 'Solicitação Pendente...' : 'Questão de Ordem'}
+                            </Button>
+                        </div>
                     </Card>
                 </div>
                 
