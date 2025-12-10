@@ -32,7 +32,7 @@ const PanelPage: React.FC = () => {
             <SpeakerPanel 
               currentSpeaker={session.currentSpeaker} 
               speakerTimerEndTime={session.speakerTimerEndTime} 
-              speakerTimerPaused={session.speakerTimerPaused} 
+              speakerTimerPaused={session.speakerTimerPaused}
             />
           </motion.div>
         );
