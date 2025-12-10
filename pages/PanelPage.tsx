@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { User, Users, Play, FileText, Pause, Mic, Clock as ClockIcon, Info, ThumbsUp, ThumbsDown, MinusCircle, Maximize, Minimize } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Users, Play, FileText, Pause, Mic, Info, ThumbsUp, ThumbsDown, MinusCircle, Maximize, Minimize, Settings2 } from 'lucide-react';
 
 // --- 1. DEFINIÇÕES DE TIPOS E MOCKS (Ambiente Autônomo) ---
 
@@ -42,36 +42,49 @@ const DADOS_VEREADORES: UserProfile[] = [
   { uid: '12', name: 'ADRIANO FERREIRA', party: 'PODE', role: UserRole.VEREADOR },
 ];
 
-// Hook Simulado (Mock) para substituir o Contexto real neste ambiente
-const useSession = () => {
-  return {
-    session: {
+const PROJETO_EXEMPLO: Project = {
+    id: 'proj-1',
+    title: 'PROJETO DE LEI Nº 001/2024',
+    description: 'Dispõe sobre a obrigatoriedade da instalação de painéis solares em prédios públicos e dá outras providências, visando a sustentabilidade e economia de energia no município.',
+    matterType: 'PROJETO DE LEI',
+    author: { name: 'JOÃO OLÍMPIO' },
+    votingRules: { majority: 'Maioria Simples' },
+    turns: 'Turno Único'
+};
+
+// --- MOCK STATE MANAGER (Para simular o Controlador) ---
+// Em produção, isso seria substituído pelo Contexto real conectado ao Firebase
+const useSessionMock = () => {
+  const [state, setState] = useState({
       status: 'active',
       phase: SessionPhase.ORDEM_DO_DIA,
       presence: DADOS_VEREADORES.reduce((acc, v) => ({ ...acc, [v.uid]: true }), {} as Record<string, boolean>),
-      // MOCK: Altere aqui para testar as telas (VOTING, READING, SPEAKER, MESSAGE, OFF)
-      panelView: PanelView.VOTING, 
-      panelMessage: "Sessão suspensa por 5 minutos.",
-      votingOpen: true,
-      votes: { '1': VoteOption.SIM, '2': VoteOption.SIM, '3': VoteOption.NAO, '4': VoteOption.ABS } as Record<string, VoteOption>,
-      currentProject: {
-        id: 'proj-1',
-        title: 'PROJETO DE LEI Nº 001/2024',
-        description: 'Dispõe sobre a obrigatoriedade da instalação de painéis solares em prédios públicos e dá outras providências.',
-        matterType: 'PROJETO DE LEI',
-        author: { name: 'JOÃO OLÍMPIO' },
-        votingRules: { majority: 'Maioria Simples' },
-        turns: 'Turno Único'
-      } as Project,
-      currentSpeaker: {
-          uid: '7', name: 'SARGENTO VAL', party: 'MDB', photoUrl: '', role: UserRole.VEREADOR
-      },
-      speakerTimerEndTime: Date.now() + 180000, 
+      panelView: PanelView.VOTING,
+      panelMessage: null as string | null,
+      votingOpen: false,
+      votes: {} as Record<string, VoteOption>,
+      currentProject: PROJETO_EXEMPLO,
+      currentSpeaker: { uid: '7', name: 'SARGENTO VAL', party: 'MDB', photoUrl: '', role: UserRole.VEREADOR },
+      speakerTimerEndTime: Date.now() + 180000,
       speakerTimerPaused: false,
       legislatureMembers: DADOS_VEREADORES.map(v => v.uid),
-    },
-    councilMembers: DADOS_VEREADORES,
+  });
+
+  // Funções de Simulação (Controlador)
+  const actions = {
+      toggleVoting: () => setState(s => ({ ...s, votingOpen: !s.votingOpen, votes: s.votingOpen ? {} : s.votes, panelView: !s.votingOpen ? PanelView.VOTING : PanelView.PRESENCE })),
+      setPanelView: (view: PanelView) => setState(s => ({ ...s, panelView: view })),
+      castRandomVotes: () => {
+          const newVotes: Record<string, VoteOption> = {};
+          DADOS_VEREADORES.forEach(v => {
+              if (Math.random() > 0.3) newVotes[v.uid] = Math.random() > 0.5 ? VoteOption.SIM : VoteOption.NAO;
+          });
+          setState(s => ({ ...s, votes: newVotes }));
+      },
+      resetSession: () => setState(s => ({ ...s, votingOpen: false, votes: {}, panelView: PanelView.PRESENCE }))
   };
+
+  return { session: state, councilMembers: DADOS_VEREADORES, actions };
 };
 
 const Clock = ({ className = "" }) => {
@@ -80,258 +93,108 @@ const Clock = ({ className = "" }) => {
   return <span className={className}>{time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>;
 };
 
-// --- 2. COMPONENTES DE VISUALIZAÇÃO (SUB-PAINÉIS) ---
+// --- 2. COMPONENTES INTERNOS DO PAINEL ---
 
-const OffPanel = () => {
-  return (
-    <div className="w-full h-full flex flex-col items-center justify-center text-white p-8 bg-gradient-to-b from-gray-900 to-black">
-      <div className="mb-12 p-8 bg-blue-600/10 rounded-full border-4 border-blue-500/30 shadow-[0_0_50px_rgba(37,99,235,0.2)] animate-pulse">
-          <Users size={140} className="text-blue-400" />
-      </div>
-      <h1 className="text-8xl font-black text-white font-sans tracking-tight mb-6 drop-shadow-2xl">SMART LEGIS</h1>
-      <h2 className="text-4xl text-gray-400 mb-16 uppercase tracking-[0.2em] font-light">Sistema de Apoio Legislativo</h2>
-      <div className="text-9xl font-bold font-mono text-white drop-shadow-lg tabular-nums">
-        <Clock />
-      </div>
-    </div>
-  );
-};
-
-const MessagePanel = ({ message }: { message: string | null }) => (
-  <div className="w-full h-full flex flex-col items-center justify-center text-white p-12 bg-yellow-900/95 backdrop-blur-sm">
-    <div className="bg-black/30 p-12 rounded-3xl border border-yellow-500/30 shadow-2xl max-w-5xl w-full text-center">
-        <Info size={80} className="mx-auto text-yellow-400 mb-6" />
-        <h1 className="text-6xl font-black tracking-wider text-yellow-400 mb-10 uppercase">Comunicado</h1>
-        <p className="text-5xl text-white font-bold leading-relaxed">{message || 'Aguarde um momento...'}</p>
-    </div>
-  </div>
-);
-
-const ReadingPanel = ({ project }: { project: Project | null }) => {
-  if (!project) return <div className="w-full h-full flex items-center justify-center text-white text-4xl bg-black">Aguardando matéria...</div>;
-  const fullDate = new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' });
-  
-  return (
-    <div className="w-full h-full flex flex-col text-white p-8 bg-gradient-to-br from-gray-900 via-slate-900 to-black font-sans">
-      <main className="flex-grow flex gap-10 items-stretch overflow-hidden">
-        {/* Coluna Esquerda: Ementa Scrollável */}
-        <div className="w-[35%] border-l-8 border-blue-500 bg-white/5 p-10 rounded-r-3xl flex flex-col shadow-2xl backdrop-blur-md">
-          <h3 className="text-blue-400 font-black text-3xl mb-8 border-b border-white/10 pb-6 tracking-wide uppercase">
-            {project.matterType}
-          </h3>
-          <div className="flex-grow overflow-y-auto pr-4 custom-scrollbar">
-             <p className="text-3xl leading-relaxed text-gray-200 font-medium text-justify">{project.description}</p>
-          </div>
-        </div>
-        
-        {/* Coluna Direita: Destaques */}
-        <div className="w-[65%] flex flex-col items-center justify-center p-12 bg-gradient-to-br from-white/5 to-transparent rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-
-            <div className="text-center w-full space-y-12 relative z-10">
-                <div>
-                    <p className="text-2xl text-blue-300 uppercase tracking-[0.3em] font-bold mb-4">Em Discussão</p>
-                    <p className="text-6xl lg:text-7xl font-black text-white leading-tight px-4 drop-shadow-2xl line-clamp-3">
-                        {project.title.toUpperCase()}
-                    </p>
-                </div>
-                
-                <div className="w-32 h-1.5 bg-blue-500 mx-auto rounded-full"></div>
-                
-                <div>
-                    <p className="text-2xl text-gray-400 uppercase tracking-[0.2em] mb-4">Autoria</p>
-                    <p className="text-5xl font-bold text-yellow-400 drop-shadow-lg">
-                        {project.author?.name.toUpperCase()}
-                    </p>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-12 pt-10 border-t border-white/10 w-full max-w-4xl mx-auto">
-                     <div className="text-center bg-black/20 py-6 rounded-2xl border border-white/5">
-                        <p className="text-gray-400 uppercase text-sm font-bold mb-2">Quórum</p>
-                        <p className="text-3xl text-white font-bold">{project.votingRules?.majority}</p>
-                     </div>
-                     <div className="text-center bg-black/20 py-6 rounded-2xl border border-white/5">
-                        <p className="text-gray-400 uppercase text-sm font-bold mb-2">Regime</p>
-                        <p className="text-3xl text-white font-bold">{project.turns || 'TURNO ÚNICO'}</p>
-                     </div>
-                </div>
-            </div>
-        </div>
-      </main>
-      <footer className="w-full text-center py-4 mt-4 text-xl text-gray-500 font-medium uppercase tracking-widest">
-          {fullDate}
-      </footer>
-    </div>
-  );
-};
-
-const SpeakerPanel = ({ currentSpeaker, speakerTimerEndTime, speakerTimerPaused }: { currentSpeaker: any, speakerTimerEndTime: number | null, speakerTimerPaused: boolean }) => {
-  const [remainingTime, setRemainingTime] = useState<number | null>(null);
-  
-  useEffect(() => {
-    if (!speakerTimerEndTime) { setRemainingTime(null); return; }
-    const calculate = () => {
-        const now = Date.now();
-        const diff = speakerTimerEndTime - now;
-        setRemainingTime(Math.max(0, Math.floor(diff / 1000)));
-    };
-    calculate(); 
-    const interval = setInterval(calculate, 1000);
-    return () => clearInterval(interval);
-  }, [speakerTimerEndTime, speakerTimerPaused]);
-
-  const formatTime = (seconds: number | null): string => { 
-      if (seconds === null) return '05:00'; 
-      const mins = Math.floor(seconds / 60).toString().padStart(2, '0'); 
-      const secs = (seconds % 60).toString().padStart(2, '0'); 
-      return `${mins}:${secs}`; 
-  };
-
-  if (!currentSpeaker) return <div className="w-full h-full flex items-center justify-center text-white text-4xl bg-black">Aguardando orador...</div>;
-
-  const isCriticalTime = remainingTime !== null && remainingTime < 30;
-
-  return (
-    <div className="w-full h-full flex flex-col items-center justify-center text-white p-8 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-800 via-gray-900 to-black">
-      <div className="bg-blue-600 text-white px-12 py-3 rounded-full font-black tracking-[0.3em] mb-16 uppercase text-2xl shadow-[0_0_40px_rgba(37,99,235,0.4)] border border-blue-400/30">
-          Tribuna Livre
-      </div>
-      <div className="flex flex-col items-center mb-16 relative z-10">
-        <div className="w-80 h-80 rounded-full bg-gray-800 border-[6px] border-gray-700 mb-10 flex items-center justify-center shadow-2xl shadow-black overflow-hidden relative">
-            {currentSpeaker.photoUrl ? (
-                <img src={currentSpeaker.photoUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-                <User size={160} className="text-gray-600" />
-            )}
-            <div className="absolute inset-0 border-4 border-blue-500/30 rounded-full animate-ping opacity-20"></div>
-        </div>
-        <h1 className="text-8xl font-black tracking-tight text-white mb-6 text-center drop-shadow-2xl">{currentSpeaker.name}</h1>
-        <div className="bg-white/10 backdrop-blur-md px-10 py-4 rounded-2xl border border-white/10">
-             <p className="text-5xl font-bold text-blue-400">{currentSpeaker.party}</p>
-        </div>
-      </div>
-      <div className="relative group">
-        <div className={`font-mono text-[14rem] leading-none font-bold tabular-nums tracking-tighter drop-shadow-2xl transition-all duration-500 ${isCriticalTime ? 'text-red-500 scale-110' : 'text-white'} ${speakerTimerPaused ? 'opacity-50' : 'opacity-100'}`}>
-            {formatTime(remainingTime)}
-        </div>
-        {speakerTimerPaused && (
-            <div className="absolute inset-0 flex items-center justify-center">
-                <span className="bg-yellow-500 text-black text-2xl font-bold px-4 py-1 rounded uppercase tracking-widest">Pausado</span>
-            </div>
-        )}
-      </div>
-      {isCriticalTime && !speakerTimerPaused && (
-          <p className="mt-8 text-red-500 font-black text-4xl animate-bounce uppercase tracking-[0.5em]">Tempo Esgotando</p>
-      )}
-    </div>
-  );
-};
-
-// --- 3. COMPONENTES DO GRID (VISÃO PADRÃO) ---
-
+// Card do Vereador (Novo Design Limpo)
 const CardVereador = ({ member, session }: { member: UserProfile, session: any }) => {
   const isPresent = session.presence[member.uid];
   const vote = session.votes[member.uid];
   const isVoting = session.votingOpen || session.panelView === PanelView.VOTING;
   
-  // --- ESTILOS BASE ---
-  let corBorda = "border-gray-700/50";
+  // Estilos Base
+  let corBorda = "border-white/10";
   let sombra = "shadow-lg";
   let iconeBg = "bg-gray-800 border-gray-700 text-gray-500";
   let corNome = "text-white";
-  let cardBg = "bg-gradient-to-br from-gray-800/60 to-gray-900/95 backdrop-blur-xl";
+  let cardBg = "bg-gradient-to-br from-gray-800/80 to-gray-900/90 backdrop-blur-xl";
+  let statusIndicator = null;
 
-  // --- LÓGICA DO ÍCONE (AVATAR OU VOTO) ---
-  let IconArea;
+  // Lógica de Exibição
+  let IconArea = (
+      <>
+        {member.photoUrl && member.photoUrl.startsWith('http') ? (
+            <img src={member.photoUrl} alt="" className={`w-full h-full object-cover ${!isPresent ? 'grayscale opacity-50' : ''}`} />
+        ) : (
+            <User size={32} strokeWidth={1.5} />
+        )}
+      </>
+  );
 
   if (isPresent) {
     corNome = "text-green-400";
     iconeBg = "bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 text-gray-300 shadow-inner";
 
-    // Se estiver em votação E tiver voto, mostra o ícone de voto
-    if (isVoting && vote) {
-         if (vote === VoteOption.SIM) {
-            corBorda = "border-green-500"; 
-            sombra = "shadow-[0_0_25px_rgba(34,197,94,0.4)] scale-[1.02] z-10";
-            iconeBg = "bg-green-600 border-green-500 text-white";
-            IconArea = <ThumbsUp size={36} strokeWidth={3} fill="currentColor" />;
-         } else if (vote === VoteOption.NAO) {
-            corBorda = "border-red-500"; 
-            sombra = "shadow-[0_0_25px_rgba(239,68,68,0.4)] scale-[1.02] z-10";
-            iconeBg = "bg-red-600 border-red-500 text-white";
-            IconArea = <ThumbsDown size={36} strokeWidth={3} fill="currentColor" />;
-         } else if (vote === VoteOption.ABS) {
-            corBorda = "border-yellow-500"; 
-            sombra = "shadow-[0_0_25px_rgba(234,179,8,0.4)] scale-[1.02] z-10";
-            iconeBg = "bg-yellow-500 border-yellow-400 text-black";
-            IconArea = <MinusCircle size={36} strokeWidth={3} />;
-         }
-    } else {
-         // Se não votou ou não é votação, mostra o Avatar
-         if (isVoting) { // Votação aberta mas não votou ainda
+    if (isVoting) {
+         if (vote) {
+             // VOTO REGISTRADO (Substitui o ícone)
+             if (vote === VoteOption.SIM) {
+                corBorda = "border-green-500"; 
+                sombra = "shadow-[0_0_20px_rgba(34,197,94,0.3)] scale-[1.02] z-10";
+                iconeBg = "bg-green-600 border-green-500 text-white";
+                IconArea = <ThumbsUp size={36} strokeWidth={3} fill="currentColor" />;
+             } else if (vote === VoteOption.NAO) {
+                corBorda = "border-red-500"; 
+                sombra = "shadow-[0_0_20px_rgba(239,68,68,0.3)] scale-[1.02] z-10";
+                iconeBg = "bg-red-600 border-red-500 text-white";
+                IconArea = <ThumbsDown size={36} strokeWidth={3} fill="currentColor" />;
+             } else if (vote === VoteOption.ABS) {
+                corBorda = "border-yellow-500"; 
+                sombra = "shadow-[0_0_20px_rgba(234,179,8,0.3)] scale-[1.02] z-10";
+                iconeBg = "bg-yellow-500 border-yellow-400 text-black";
+                IconArea = <MinusCircle size={36} strokeWidth={3} />;
+             }
+         } else {
+             // AGUARDANDO VOTO (Pisca)
              corBorda = "border-blue-500/50";
              iconeBg += " animate-pulse ring-2 ring-blue-500/30";
-         } else { // Apenas presente
-             corBorda = "border-gray-600/50"; 
          }
-         
-         IconArea = member.photoUrl && member.photoUrl.startsWith('http') ? (
-            <img src={member.photoUrl} alt="" className={`w-full h-full object-cover`} />
-         ) : (
-            <User size={32} strokeWidth={1.5} />
-         );
     }
   } else {
      // AUSENTE
-     corNome = (session.status === 'inactive' || session.phase === SessionPhase.INICIAL) ? "text-gray-500" : "text-red-500";
-     corBorda = "border-gray-800"; 
-     cardBg = "bg-gray-900/20 backdrop-blur-sm opacity-60";
-     IconArea = <User size={32} strokeWidth={1.5} className="opacity-50"/>;
+     corNome = "text-red-500/70";
+     corBorda = "border-white/5"; 
+     cardBg = "bg-gray-900/30 backdrop-blur-sm opacity-50";
+     IconArea = <User size={32} strokeWidth={1.5} className="opacity-30"/>;
   }
 
   return (
-    <div className={`flex flex-col justify-center rounded-2xl border-2 ${corBorda} ${cardBg} transition-all duration-500 ease-out ${sombra} h-full overflow-hidden relative group p-4`}>
+    <div className={`flex items-center rounded-2xl border-2 ${corBorda} ${cardBg} transition-all duration-300 ease-out ${sombra} h-24 overflow-hidden relative group px-4 gap-4`}>
       
-      {/* Container Principal */}
-      <div className="flex items-center gap-5 w-full">
-        
-        {/* Foto / Ícone de Voto */}
-        <div className={`w-20 h-20 rounded-2xl flex-shrink-0 flex items-center justify-center border ${iconeBg} overflow-hidden transition-all duration-300 transform`}>
-          {IconArea}
-        </div>
+      {/* 1. Ícone / Voto (Esquerda) */}
+      <div className={`w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center border-2 ${iconeBg} overflow-hidden transition-all duration-300 transform`}>
+        {IconArea}
+      </div>
 
-        {/* Bloco de Texto */}
-        <div className="flex-1 min-w-0 flex flex-col justify-center items-start text-left">
-            
-            {/* Cargo */}
-            <div className="mb-1 min-h-[16px] flex items-end w-full justify-start">
-                {member.boardRole ? (
-                    <span className="text-[11px] md:text-[12px] text-yellow-400 font-black uppercase tracking-wider leading-none drop-shadow-md">
-                        {member.boardRole.toUpperCase()}
-                    </span>
-                ) : ( 
-                    <span className="text-[11px] opacity-0 select-none leading-none">.</span> 
-                )}
-            </div>
+      {/* 2. Informações (Direita) */}
+      <div className="flex-1 min-w-0 flex flex-col justify-center items-start text-left h-full py-2">
+          
+          {/* Cargo (Topo) */}
+          <div className="h-4 flex items-center w-full">
+              {member.boardRole ? (
+                  <span className="text-[10px] text-yellow-400 font-black uppercase tracking-wider leading-none">
+                      {member.boardRole}
+                  </span>
+              ) : null}
+          </div>
 
-            {/* Nome */}
-            <div className={`text-base md:text-[1.25rem] font-bold uppercase tracking-wide leading-tight text-left break-words w-full ${corNome} drop-shadow-sm`}>
-                {member.name}
-            </div>
+          {/* Nome (Meio - Grande) */}
+          <div className={`text-lg font-bold uppercase tracking-wide leading-tight text-left truncate w-full ${corNome} drop-shadow-md`}>
+              {member.name}
+          </div>
 
-            {/* Partido */}
-            <div className="mt-2 flex w-full justify-start">
-                <span className={`text-[11px] font-bold inline-block px-3 py-0.5 rounded border ${isPresent ? 'bg-gray-800/80 border-gray-600 text-blue-200' : 'bg-gray-900 border-gray-800 text-gray-700'}`}>
-                    {member.party}
-                </span>
-            </div>
+          {/* Partido (Baixo) */}
+          <div className="h-5 flex items-center mt-1">
+              <span className={`text-[10px] font-bold inline-block px-2 py-0.5 rounded border ${isPresent ? 'bg-gray-800/80 border-gray-600 text-blue-200' : 'bg-gray-900 border-gray-800 text-gray-600'}`}>
+                  {member.party}
+              </span>
+          </div>
 
-        </div>
       </div>
     </div>
   );
 };
 
+// Resumo do Rodapé
 const ResumoVotacao = ({ session, members }: { session: any, members: any[] }) => {
   const presentes = members.filter(m => session.presence[m.uid]).length;
   const total = members.length;
@@ -340,149 +203,188 @@ const ResumoVotacao = ({ session, members }: { session: any, members: any[] }) =
   const nao = Object.values(votes).filter(v => v === VoteOption.NAO).length;
   const abs = Object.values(votes).filter(v => v === VoteOption.ABS).length;
 
-  if (session.phase === SessionPhase.INICIAL || session.status === 'inactive') {
+  if (!session.votingOpen && session.panelView !== PanelView.VOTING) {
       return ( 
-        <div className="bg-gray-800/60 backdrop-blur-xl border border-gray-600 px-12 py-4 rounded-full flex items-center gap-6 mx-auto shadow-2xl"> 
+        <div className="bg-gray-800/60 backdrop-blur-xl border border-gray-600 px-12 py-3 rounded-full flex items-center gap-6 mx-auto shadow-2xl"> 
             <span className="text-gray-400 uppercase tracking-[0.2em] text-sm font-bold">Quórum em Plenário</span> 
-            <span className="text-5xl font-black text-white leading-none">{presentes}<span className="text-gray-500 text-2xl font-medium ml-1">/{total}</span></span> 
+            <span className="text-4xl font-black text-white leading-none">{presentes}<span className="text-gray-500 text-xl font-medium ml-1">/{total}</span></span> 
         </div> 
       );
   }
 
   return (
-    <div className="grid grid-cols-4 gap-px bg-gray-700/40 rounded-2xl border border-gray-600 shadow-2xl w-full max-w-6xl mx-auto overflow-hidden backdrop-blur-2xl">
-      <div className="flex flex-col items-center justify-center p-4 bg-gray-900/80"> 
-        <span className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-2">Presentes</span> 
-        <span className="text-5xl font-bold text-white leading-none">{presentes}</span> 
+    <div className="grid grid-cols-4 gap-px bg-gray-700/40 rounded-2xl border border-gray-600 shadow-2xl w-full max-w-5xl mx-auto overflow-hidden backdrop-blur-2xl">
+      <div className="flex flex-col items-center justify-center p-3 bg-gray-900/80"> 
+        <span className="text-gray-400 text-[10px] uppercase tracking-widest font-bold mb-1">Presentes</span> 
+        <span className="text-3xl font-bold text-white leading-none">{presentes}</span> 
       </div>
-      <div className="flex flex-col items-center justify-center p-4 bg-gray-900/80 border-l border-gray-700"> 
-        <span className="text-green-500 text-xs uppercase font-bold tracking-widest mb-2">Sim</span> 
-        <span className="text-5xl font-bold text-green-400 leading-none">{sim}</span> 
+      <div className="flex flex-col items-center justify-center p-3 bg-gray-900/80 border-l border-gray-700"> 
+        <span className="text-green-500 text-[10px] uppercase font-bold tracking-widest mb-1">Sim</span> 
+        <span className="text-3xl font-bold text-green-400 leading-none">{sim}</span> 
       </div>
-      <div className="flex flex-col items-center justify-center p-4 bg-gray-900/80 border-l border-gray-700"> 
-        <span className="text-red-500 text-xs uppercase font-bold tracking-widest mb-2">Não</span> 
-        <span className="text-5xl font-bold text-red-400 leading-none">{nao}</span> 
+      <div className="flex flex-col items-center justify-center p-3 bg-gray-900/80 border-l border-gray-700"> 
+        <span className="text-red-500 text-[10px] uppercase font-bold tracking-widest mb-1">Não</span> 
+        <span className="text-3xl font-bold text-red-400 leading-none">{nao}</span> 
       </div>
-      <div className="flex flex-col items-center justify-center p-4 bg-gray-900/80 border-l border-gray-700"> 
-        <span className="text-yellow-500 text-xs uppercase font-bold tracking-widest mb-2">Abstenção</span> 
-        <span className="text-5xl font-bold text-yellow-400 leading-none">{abs}</span> 
+      <div className="flex flex-col items-center justify-center p-3 bg-gray-900/80 border-l border-gray-700"> 
+        <span className="text-yellow-500 text-[10px] uppercase font-bold tracking-widest mb-1">Abstenção</span> 
+        <span className="text-3xl font-bold text-yellow-400 leading-none">{abs}</span> 
       </div>
     </div>
   );
 };
 
-// --- Página Principal do Painel ---
+// Componente de Leitura (Substitui o Grid)
+const ProjectDisplay = ({ project }: { project: Project }) => (
+    <div className="flex-1 flex flex-col justify-center items-center bg-gray-900/40 backdrop-blur-md rounded-3xl border border-white/10 p-12 shadow-2xl m-4 relative overflow-hidden">
+         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+         <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+         <div className="z-10 w-full max-w-5xl text-center space-y-10">
+            <div className="inline-block px-6 py-2 bg-blue-500/20 rounded-full border border-blue-500/30 text-blue-300 font-bold tracking-widest uppercase mb-4">
+                Em Discussão
+            </div>
+            <h1 className="text-6xl md:text-7xl font-black text-white leading-tight drop-shadow-xl">
+                {project.title}
+            </h1>
+            <p className="text-3xl text-gray-300 leading-relaxed font-light max-w-4xl mx-auto border-l-4 border-yellow-500 pl-8 text-left">
+                {project.description}
+            </p>
+            <div className="pt-8 flex justify-center gap-16 border-t border-white/10 mt-8">
+                <div>
+                    <p className="text-gray-500 uppercase text-sm font-bold mb-2">Autoria</p>
+                    <p className="text-2xl text-yellow-400 font-bold">{project.author.name}</p>
+                </div>
+                <div>
+                    <p className="text-gray-500 uppercase text-sm font-bold mb-2">Regime</p>
+                    <p className="text-2xl text-white font-bold">{project.turns || 'Turno Único'}</p>
+                </div>
+                <div>
+                    <p className="text-gray-500 uppercase text-sm font-bold mb-2">Quórum</p>
+                    <p className="text-2xl text-white font-bold">{project.votingRules.majority}</p>
+                </div>
+            </div>
+         </div>
+    </div>
+);
+
+// --- 3. PÁGINA PRINCIPAL ---
+
 const PanelPage: React.FC = () => {
-    const { session, councilMembers } = useSession();
+    // Usando o Mock para simular funcionalidades
+    const { session, councilMembers, actions } = useSessionMock();
     const [hora, setHora] = useState(new Date());
     const [isFullscreen, setIsFullscreen] = useState(false);
     
-    useEffect(() => { 
-        const t = setInterval(() => setHora(new Date()), 1000); 
-        return () => clearInterval(t); 
-    }, []);
-
-    // Monitora mudanças no Fullscreen
+    useEffect(() => { const t = setInterval(() => setHora(new Date()), 1000); return () => clearInterval(t); }, []);
     useEffect(() => {
-        const handleFullScreenChange = () => setIsFullscreen(!!document.fullscreenElement);
-        document.addEventListener('fullscreenchange', handleFullScreenChange);
-        return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
+        const handleChange = () => setIsFullscreen(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', handleChange);
+        return () => document.removeEventListener('fullscreenchange', handleChange);
     }, []);
 
     const toggleFullScreen = () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch((e) => console.log(e));
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            }
-        }
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(console.log);
+        else if (document.exitFullscreen) document.exitFullscreen();
     };
 
     const activeMembers = councilMembers; 
 
-    // Roteamento de Visão do Painel
-    // Se o controlador definir uma visão diferente de VOTING/PRESENCE, mostra a tela específica.
-    // O botão de "fullscreen" deve aparecer em TODAS as telas.
-    
-    const renderContent = () => {
-        if (session.panelView === PanelView.READING) return <ReadingPanel project={session.currentProject} />;
-        if (session.panelView === PanelView.SPEAKER) return <SpeakerPanel currentSpeaker={session.currentSpeaker} speakerTimerEndTime={session.speakerTimerEndTime} speakerTimerPaused={session.speakerTimerPaused} />;
-        if (session.panelView === PanelView.MESSAGE) return <MessagePanel message={session.panelMessage} />;
-        if (session.panelView === PanelView.OFF) return <OffPanel />;
-
-        // Visão Padrão (Grid)
-        return (
-            <div className="h-screen bg-black text-white font-sans flex flex-col p-6 md:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0a0a] to-black overflow-hidden relative selection:bg-blue-500/30">
-                 
-                 {/* Cabeçalho */}
-                 <header className="flex justify-between items-center bg-gray-900/60 backdrop-blur-xl px-8 py-5 rounded-3xl border-b border-white/5 mb-6 shadow-2xl shrink-0 z-10">
-                      <div className="flex items-center gap-6">
-                        <div className="p-3.5 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl shadow-lg shadow-blue-900/20 ring-1 ring-white/10"> 
-                            <Users size={36} className="text-white" /> 
-                        </div>
-                        <div> 
-                            <h1 className="text-3xl font-bold tracking-widest text-white drop-shadow-md">CÂMARA MUNICIPAL</h1> 
-                            <p className="text-blue-300/80 text-sm font-bold uppercase tracking-[0.3em] ml-0.5">Poder Legislativo</p> 
-                        </div>
-                      </div>
-                      <div className="text-right">
-                         <div className="text-6xl font-mono font-bold text-white tracking-tighter drop-shadow-lg leading-none"> 
-                            {hora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} 
-                         </div>
-                         <div className="text-gray-400 font-medium text-sm mt-2 uppercase tracking-widest"> 
-                            {hora.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} 
-                         </div>
-                      </div>
-                 </header>
-
-                 {/* Área de Destaque: Matéria em Votação (Opcional, acima do grid) */}
-                 {session.currentProject && session.votingOpen && (
-                    <div className="mb-6 flex gap-6 h-36 shrink-0 animate-in fade-in slide-in-from-top-4 duration-500">
-                        <div className="flex-1 bg-gray-800/40 backdrop-blur-xl px-8 py-5 rounded-2xl border-l-8 border-blue-500 flex flex-col justify-center shadow-2xl ring-1 ring-white/5">
-                            <div className="flex items-center justify-between mb-2"> 
-                                <h3 className="text-blue-400 font-bold uppercase tracking-wider text-xs">Em Votação</h3> 
-                            </div>
-                            <p className="text-3xl font-bold text-white leading-tight mb-2 line-clamp-1 drop-shadow-md">{session.currentProject.title}</p>
-                            <p className="text-gray-300 text-lg line-clamp-2 leading-relaxed max-w-5xl">{session.currentProject.description}</p>
-                        </div>
-                         <div className="w-56 rounded-2xl flex flex-col items-center justify-center border-2 border-red-500/30 bg-gradient-to-b from-red-900/40 to-red-950/40 backdrop-blur-xl animate-pulse shadow-[0_0_30px_rgba(220,38,38,0.2)]">
-                            <Play size={48} className="text-red-500 mb-2 drop-shadow-lg" /> 
-                            <span className="text-red-500 font-black text-center text-xl tracking-wider drop-shadow-md">VOTAÇÃO<br/>ABERTA</span> 
-                        </div>
-                    </div>
-                 )}
-
-                 {/* Grid de Vereadores */}
-                 <div className="flex-1 min-h-0 overflow-hidden pb-4 relative z-0">
-                    <div className="grid grid-cols-3 lg:grid-cols-4 gap-4 h-full content-stretch p-2">
-                        {activeMembers.map(ver => ( 
-                            <CardVereador key={ver.uid} member={ver} session={session} /> 
-                        ))}
-                    </div>
-                 </div>
-
-                 {/* Rodapé com Totais */}
-                 <div className="flex-shrink-0 mt-2 mb-2">
-                    <ResumoVotacao session={session} members={activeMembers} />
+    // Conteúdo Central Dinâmico
+    let MainContent;
+    if (session.panelView === PanelView.READING && session.currentProject) {
+        MainContent = <ProjectDisplay project={session.currentProject} />;
+    } else if (session.panelView === PanelView.OFF) {
+        MainContent = <div className="flex-1 flex items-center justify-center text-4xl text-gray-500">Sessão em Espera</div>;
+    } else {
+        // Grid de Votação/Presença (Padrão)
+        MainContent = (
+            <div className="flex-1 min-h-0 overflow-hidden pb-4 relative z-0 flex flex-col">
+                 <div className="grid grid-cols-3 lg:grid-cols-4 gap-6 h-full content-start p-6 overflow-y-auto">
+                    {activeMembers.map(ver => ( 
+                        <CardVereador key={ver.uid} member={ver} session={session} /> 
+                    ))}
                  </div>
             </div>
         );
     }
 
     return (
-        <>
-            {renderContent()}
+        <div className="h-screen bg-black text-white font-sans flex flex-col p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0a0a] to-black overflow-hidden relative selection:bg-blue-500/30">
+             
+             {/* Cabeçalho Fixo */}
+             <header className="flex justify-between items-center bg-gray-900/60 backdrop-blur-xl px-10 py-5 rounded-3xl border-b border-white/5 mb-4 shadow-2xl shrink-0 z-10">
+                  <div className="flex items-center gap-6">
+                    <div className="p-3.5 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl shadow-lg shadow-blue-900/20 ring-1 ring-white/10"> 
+                        <Users size={40} className="text-white" /> 
+                    </div>
+                    <div> 
+                        <h1 className="text-3xl font-bold tracking-widest text-white drop-shadow-md">CÂMARA MUNICIPAL</h1> 
+                        <p className="text-blue-300/80 text-sm font-bold uppercase tracking-[0.3em] ml-0.5">Poder Legislativo</p> 
+                    </div>
+                  </div>
+                  <div className="text-right">
+                     <div className="text-6xl font-mono font-bold text-white tracking-tighter drop-shadow-lg leading-none"> 
+                        {hora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} 
+                     </div>
+                     <div className="text-gray-400 font-medium text-sm mt-2 uppercase tracking-widest"> 
+                        {hora.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} 
+                     </div>
+                  </div>
+             </header>
+
+             {/* Área de Notificação (Se houver votação e NÃO estivermos lendo projeto) */}
+             {session.votingOpen && session.panelView !== PanelView.READING && (
+                <div className="mb-4 bg-red-900/20 border border-red-500/30 rounded-2xl p-4 flex items-center justify-center gap-4 animate-pulse shrink-0">
+                    <Play size={32} className="text-red-500" />
+                    <span className="text-2xl font-bold text-red-500 tracking-widest uppercase">Votação Aberta: {session.currentProject?.title}</span>
+                </div>
+             )}
+
+             {/* Conteúdo Principal (Grid ou Leitura) */}
+             {MainContent}
+
+             {/* Rodapé com Totais (Apenas se não estiver em leitura tela cheia) */}
+             {session.panelView !== PanelView.READING && (
+                 <div className="flex-shrink-0 mt-2">
+                    <ResumoVotacao session={session} members={activeMembers} />
+                 </div>
+             )}
+
+            {/* --- CONTROLES DE SIMULAÇÃO (VISÍVEIS APENAS NO HOVER DO CANTO INFERIOR ESQUERDO) --- */}
+            {/* Útil para você testar os botões do controlador sem ter o backend conectado */}
+            <div className="fixed bottom-6 left-6 group z-50">
+                <div className="p-3 bg-gray-800/50 text-white/30 rounded-full border border-white/5 group-hover:hidden transition-all">
+                    <Settings2 size={24} />
+                </div>
+                <div className="hidden group-hover:flex flex-col gap-2 bg-gray-800/90 backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-2xl w-64">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-2">Simulador de Mesa</p>
+                    <button onClick={actions.toggleVoting} className={`px-3 py-2 rounded font-bold text-sm ${session.votingOpen ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+                        {session.votingOpen ? 'Fechar Votação' : 'Abrir Votação'}
+                    </button>
+                    <button onClick={actions.castRandomVotes} className="px-3 py-2 bg-blue-600 text-white rounded font-bold text-sm hover:bg-blue-700">
+                        Computar Votos (Teste)
+                    </button>
+                    <div className="h-px bg-white/10 my-1"></div>
+                    <button onClick={() => actions.setPanelView(PanelView.READING)} className="px-3 py-2 bg-gray-700 text-white rounded font-bold text-sm hover:bg-gray-600 text-left flex items-center gap-2">
+                        <FileText size={14}/> Espelhar Projeto
+                    </button>
+                    <button onClick={() => actions.setPanelView(PanelView.VOTING)} className="px-3 py-2 bg-gray-700 text-white rounded font-bold text-sm hover:bg-gray-600 text-left flex items-center gap-2">
+                        <Users size={14}/> Voltar p/ Grid
+                    </button>
+                </div>
+            </div>
+
             {/* Botão de Tela Cheia Global */}
             <button 
                 onClick={toggleFullScreen} 
-                className="fixed bottom-6 right-6 p-3 bg-gray-800/50 hover:bg-blue-600 text-white/50 hover:text-white rounded-full backdrop-blur-sm transition-all duration-300 z-[100] border border-white/10"
+                className="fixed bottom-6 right-6 p-3 bg-gray-800/30 hover:bg-blue-600 text-white/30 hover:text-white rounded-full backdrop-blur-sm transition-all duration-300 z-[100] border border-white/5 hover:border-white/20 opacity-0 hover:opacity-100"
                 title={isFullscreen ? "Sair da Tela Cheia" : "Tela Cheia"}
             >
                 {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
             </button>
-        </>
-    )
+        </div>
+    );
 };
 
 export default PanelPage;
