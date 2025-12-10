@@ -48,13 +48,12 @@ const useSession = () => {
     session: {
       status: 'active',
       phase: SessionPhase.ORDEM_DO_DIA,
-      // Simula presença de todos
       presence: DADOS_VEREADORES.reduce((acc, v) => ({ ...acc, [v.uid]: true }), {} as Record<string, boolean>),
-      // ALTERE AQUI PARA TESTAR OUTRAS TELAS: PanelView.READING, PanelView.SPEAKER, etc.
+      // Use isso para testar as telas: PanelView.VOTING, PanelView.READING, PanelView.SPEAKER
       panelView: PanelView.VOTING, 
       panelMessage: "Sessão suspensa por 5 minutos.",
       votingOpen: true,
-      // Simula alguns votos
+      // Simulando alguns votos para visualização
       votes: { '1': VoteOption.SIM, '2': VoteOption.SIM, '3': VoteOption.NAO, '4': VoteOption.ABS } as Record<string, VoteOption>,
       currentProject: {
         id: 'proj-1',
@@ -68,7 +67,7 @@ const useSession = () => {
       currentSpeaker: {
           uid: '7', name: 'SARGENTO VAL', party: 'MDB', photoUrl: '', role: UserRole.VEREADOR
       },
-      speakerTimerEndTime: Date.now() + 180000, // +3 minutos
+      speakerTimerEndTime: Date.now() + 180000, 
       speakerTimerPaused: false,
       legislatureMembers: DADOS_VEREADORES.map(v => v.uid),
     },
@@ -76,7 +75,6 @@ const useSession = () => {
   };
 };
 
-// Componente Clock Auxiliar
 const Clock = ({ className = "" }) => {
   const [time, setTime] = useState(new Date());
   useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
@@ -85,7 +83,6 @@ const Clock = ({ className = "" }) => {
 
 // --- 2. COMPONENTES DE VISUALIZAÇÃO (SUB-PAINÉIS) ---
 
-// Tela de Espera (Off)
 const OffPanel = () => {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center text-white p-8 bg-gradient-to-b from-gray-900 to-black">
@@ -101,7 +98,6 @@ const OffPanel = () => {
   );
 };
 
-// Tela de Mensagem (Avisos)
 const MessagePanel = ({ message }: { message: string | null }) => (
   <div className="w-full h-full flex flex-col items-center justify-center text-white p-12 bg-yellow-900/95 backdrop-blur-sm">
     <div className="bg-black/30 p-12 rounded-3xl border border-yellow-500/30 shadow-2xl max-w-5xl w-full text-center">
@@ -112,7 +108,6 @@ const MessagePanel = ({ message }: { message: string | null }) => (
   </div>
 );
 
-// Tela de Leitura de Projeto (Espelhamento)
 const ReadingPanel = ({ project }: { project: Project | null }) => {
   if (!project) return <div className="w-full h-full flex items-center justify-center text-white text-4xl bg-black">Aguardando matéria...</div>;
   const fullDate = new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -132,7 +127,6 @@ const ReadingPanel = ({ project }: { project: Project | null }) => {
         
         {/* Coluna Direita: Destaques */}
         <div className="w-[65%] flex flex-col items-center justify-center p-12 bg-gradient-to-br from-white/5 to-transparent rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
-            {/* Background decorativo */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
             <div className="text-center w-full space-y-12 relative z-10">
@@ -172,7 +166,6 @@ const ReadingPanel = ({ project }: { project: Project | null }) => {
   );
 };
 
-// Tela de Orador (Tribuna)
 const SpeakerPanel = ({ currentSpeaker, speakerTimerEndTime, speakerTimerPaused }: { currentSpeaker: any, speakerTimerEndTime: number | null, speakerTimerPaused: boolean }) => {
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
   
@@ -242,29 +235,25 @@ const SpeakerPanel = ({ currentSpeaker, speakerTimerEndTime, speakerTimerPaused 
 
 // --- 3. COMPONENTES DO GRID (VISÃO PADRÃO) ---
 
+// FIX: Define a props interface and use React.FC to fix the 'key' prop error.
 interface CardVereadorProps {
   member: UserProfile;
   session: any;
 }
-// FIX: Changed component definition to use React.FC to fix typing issue with 'key' prop.
+
 const CardVereador: React.FC<CardVereadorProps> = ({ member, session }) => {
   const isPresent = session.presence[member.uid];
   const vote = session.votes[member.uid];
   const isVoting = session.votingOpen || session.panelView === PanelView.VOTING;
-  const isChamada = session.panelView === PanelView.PRESENCE;
-
-  // --- CONFIGURAÇÃO DE ESTILOS ---
+  
+  // --- ESTILOS BASE DO CARD ---
   let corBorda = "border-gray-700/50";
-  let bgStatus = "bg-gray-900/90"; 
-  let textoStatus = "\u00A0";
-  let corTextoStatus = "text-gray-500";
   let sombra = "shadow-lg";
   let iconeBg = "bg-gray-800 border-gray-700 text-gray-500";
-  let borderTopStatus = "border-t border-white/5";
   let corNome = "text-white";
   let cardBg = "bg-gradient-to-br from-gray-800/60 to-gray-900/95 backdrop-blur-xl";
 
-  // Determinar o conteúdo da área do ícone (Avatar vs Voto)
+  // --- ÍCONE DE VOTAÇÃO VS AVATAR ---
   let IconArea = (
       <>
         {member.photoUrl && member.photoUrl.startsWith('http') ? (
@@ -282,54 +271,36 @@ const CardVereador: React.FC<CardVereadorProps> = ({ member, session }) => {
     if (isVoting) {
          if (vote === VoteOption.SIM) {
             corBorda = "border-green-500"; 
-            bgStatus = "bg-green-600"; 
-            textoStatus = "\u00A0"; // Remove texto
-            corTextoStatus = "text-white"; 
             sombra = "shadow-[0_0_25px_rgba(34,197,94,0.4)] scale-[1.02] z-10";
             
-            // Ícone de Voto (Like Verde)
+            // LIKE VERDE (YOUTUBE STYLE)
             iconeBg = "bg-green-600 border-green-500 text-white";
-            IconArea = <ThumbsUp size={32} strokeWidth={2.5} />;
+            IconArea = <ThumbsUp size={32} strokeWidth={3} fill="currentColor" />;
 
          } else if (vote === VoteOption.NAO) {
             corBorda = "border-red-500"; 
-            bgStatus = "bg-red-600"; 
-            textoStatus = "\u00A0"; // Remove texto
-            corTextoStatus = "text-white"; 
             sombra = "shadow-[0_0_25px_rgba(239,68,68,0.4)] scale-[1.02] z-10";
 
-            // Ícone de Voto (Dislike Vermelho)
+            // DISLIKE VERMELHO
             iconeBg = "bg-red-600 border-red-500 text-white";
-            IconArea = <ThumbsDown size={32} strokeWidth={2.5} />;
+            IconArea = <ThumbsDown size={32} strokeWidth={3} fill="currentColor" />;
 
          } else if (vote === VoteOption.ABS) {
             corBorda = "border-yellow-500"; 
-            bgStatus = "bg-yellow-500"; 
-            textoStatus = "\u00A0"; // Remove texto
-            corTextoStatus = "text-black"; 
             sombra = "shadow-[0_0_25px_rgba(234,179,8,0.4)] scale-[1.02] z-10";
 
-            // Ícone de Voto (Abstenção Amarelo)
+            // ABSTENÇÃO AMARELO
             iconeBg = "bg-yellow-500 border-yellow-400 text-black";
-            IconArea = <MinusCircle size={32} strokeWidth={2.5} />;
+            IconArea = <MinusCircle size={32} strokeWidth={3} />;
             
          } else {
             corBorda = "border-blue-500/50"; 
-            bgStatus = "bg-gray-800"; 
-            textoStatus = "AGUARDANDO"; 
-            corTextoStatus = "text-blue-300 animate-pulse";
+            // Aguardando voto... mantém avatar padrão piscando levemente
+            iconeBg += " animate-pulse ring-2 ring-blue-500/30";
          }
-    } else if (isChamada) {
-         corBorda = "border-green-500/50"; 
-         bgStatus = "bg-green-900/40"; 
-         textoStatus = "PRESENTE"; 
-         corTextoStatus = "text-green-400"; 
-         sombra = "shadow-green-900/20";
     } else {
+         // Apenas presente (Chamada ou Sessão normal)
          corBorda = "border-gray-600/50"; 
-         bgStatus = "bg-gray-800/80"; 
-         textoStatus = "EM PLENÁRIO"; 
-         corTextoStatus = "text-green-500 font-bold";
     }
   } else {
      // AUSENTE
@@ -339,24 +310,22 @@ const CardVereador: React.FC<CardVereadorProps> = ({ member, session }) => {
          corNome = "text-red-500"; 
      }
      corBorda = "border-gray-800"; 
-     bgStatus = "bg-transparent"; 
-     borderTopStatus = "border-0"; 
      cardBg = "bg-gray-900/20 backdrop-blur-sm opacity-60"; 
   }
 
   return (
-    <div className={`flex flex-col rounded-2xl border-2 ${corBorda} ${cardBg} transition-all duration-500 ease-out ${sombra} h-full overflow-hidden relative group`}>
+    <div className={`flex flex-col justify-center rounded-2xl border-2 ${corBorda} ${cardBg} transition-all duration-500 ease-out ${sombra} h-full overflow-hidden relative group p-4`}>
       
-      {/* Área Principal */}
-      <div className="flex-1 flex items-center px-5 gap-5 min-h-0 py-2 relative z-10">
+      {/* Área Principal - Sem tarja inferior, tudo centralizado */}
+      <div className="flex items-center gap-5 w-full">
         
         {/* Foto / Ícone (Vira Voto quando votado) */}
-        <div className={`w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center border ${iconeBg} overflow-hidden transition-colors duration-300`}>
+        <div className={`w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center border ${iconeBg} overflow-hidden transition-all duration-300 transform`}>
           {IconArea}
         </div>
 
-        {/* Bloco de Texto - Centralizado Verticalmente */}
-        <div className="flex-1 min-w-0 h-full flex flex-col justify-center items-start text-left">
+        {/* Bloco de Texto - Centralizado Verticalmente e Alinhado à Esquerda */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center items-start text-left">
             
             {/* Cargo */}
             <div className="mb-0.5 min-h-[16px] flex items-end w-full justify-start">
@@ -370,7 +339,7 @@ const CardVereador: React.FC<CardVereadorProps> = ({ member, session }) => {
             </div>
 
             {/* Nome */}
-            <div className={`text-sm md:text-[1.05rem] font-bold uppercase tracking-wide leading-tight text-left break-words w-full ${corNome} drop-shadow-sm`}>
+            <div className={`text-sm md:text-[1.1rem] font-bold uppercase tracking-wide leading-tight text-left break-words w-full ${corNome} drop-shadow-sm`}>
                 {member.name}
             </div>
 
@@ -382,11 +351,6 @@ const CardVereador: React.FC<CardVereadorProps> = ({ member, session }) => {
             </div>
 
         </div>
-      </div>
-      
-      {/* Barra de Status Inferior */}
-      <div className={`h-8 flex items-center justify-center rounded-b-xl font-black text-sm tracking-[0.2em] ${bgStatus} ${corTextoStatus} ${borderTopStatus} shrink-0 relative z-10`}>
-        {textoStatus}
       </div>
     </div>
   );
@@ -433,7 +397,6 @@ const ResumoVotacao = ({ session, members }: { session: any, members: any[] }) =
 
 // --- Página Principal do Painel ---
 const PanelPage: React.FC = () => {
-    // Hook simulado para demonstração. No projeto real, use: const { session, councilMembers } = useSession();
     const { session, councilMembers } = useSession();
     const [hora, setHora] = useState(new Date());
     
@@ -442,16 +405,15 @@ const PanelPage: React.FC = () => {
         return () => clearInterval(t); 
     }, []);
 
-    // Filtra membros da legislatura
-    const activeMembers = councilMembers.filter(m => session.legislatureMembers.includes(m.uid));
+    const activeMembers = councilMembers; 
 
-    // 1. Roteamento de Telas (Espelhamento)
+    // Roteamento de Visão do Painel
     if (session.panelView === PanelView.READING) return <ReadingPanel project={session.currentProject} />;
     if (session.panelView === PanelView.SPEAKER) return <SpeakerPanel currentSpeaker={session.currentSpeaker} speakerTimerEndTime={session.speakerTimerEndTime} speakerTimerPaused={session.speakerTimerPaused} />;
     if (session.panelView === PanelView.MESSAGE) return <MessagePanel message={session.panelMessage} />;
     if (session.panelView === PanelView.OFF) return <OffPanel />;
 
-    // 2. Visão Padrão (Grid)
+    // Visão Padrão (Grid)
     return (
         <div className="h-screen bg-black text-white font-sans flex flex-col p-4 md:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0a0a] to-black overflow-hidden relative selection:bg-blue-500/30">
              
@@ -476,7 +438,7 @@ const PanelPage: React.FC = () => {
                   </div>
              </header>
 
-             {/* Área de Destaque: Matéria em Votação (Aparece se houver projeto e votação aberta) */}
+             {/* Área de Destaque: Matéria em Votação */}
              {session.currentProject && session.votingOpen && (
                 <div className="mb-6 flex gap-6 h-36 shrink-0 animate-in fade-in slide-in-from-top-4 duration-500">
                     <div className="flex-1 bg-gray-800/40 backdrop-blur-xl px-8 py-5 rounded-2xl border-l-8 border-blue-500 flex flex-col justify-center shadow-2xl ring-1 ring-white/5">

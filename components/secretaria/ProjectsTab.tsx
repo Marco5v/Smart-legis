@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
-import { PlusCircle, ChevronDown, ChevronRight, Edit, FileText, History, Info } from 'lucide-react';
+import { PlusCircle, ChevronDown, ChevronRight, Edit, History, Info } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import { Project, ProjectWorkflowStatus } from '../../types';
 import { ProjectAmendmentsDetail } from './ProjectAmendmentsDetail';
@@ -49,6 +48,51 @@ const ProjectDetailTabs: React.FC<{ project: Project }> = ({ project }) => {
     );
 };
 
+const ProjectItem: React.FC<{
+    project: Project;
+    isExpanded: boolean;
+    onToggleExpand: () => void;
+    onEdit: () => void;
+}> = ({ project, isExpanded, onToggleExpand, onEdit }) => {
+    return (
+        <div className="bg-sapv-blue-light border border-sapv-gray-dark rounded-lg shadow-md transition-shadow hover:shadow-lg">
+            <div className="p-4 flex flex-col md:flex-row items-start md:items-center gap-4">
+                <div className="flex-grow">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                        <span className={`px-2 py-1 text-xs font-bold rounded-full whitespace-nowrap ${getStatusBadgeStyle(project.workflowStatus)}`}>
+                            {project.workflowStatus}
+                        </span>
+                        <h3 className="font-bold text-base text-sapv-gray-light leading-tight">
+                            {project.title}
+                        </h3>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-sapv-gray">
+                        <span><strong>Nº:</strong> {project.number}</span>
+                        <span><strong>Data:</strong> {project.date ? new Date(project.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '-'}</span>
+                        <span><strong>Autor:</strong> {project.author.name}</span>
+                    </div>
+                    <p className="mt-3 text-sm text-sapv-gray-light max-w-2xl">
+                        {project.description}
+                    </p>
+                </div>
+                <div className="flex-shrink-0 flex items-center gap-2 self-start md:self-center">
+                    <Button size="sm" variant="secondary" onClick={onEdit} className="!p-2" title="Editar Projeto">
+                        <Edit size={16} />
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={onToggleExpand} className="!p-2" title={isExpanded ? "Ocultar Detalhes" : "Mostrar Detalhes"}>
+                        {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                    </Button>
+                </div>
+            </div>
+            {isExpanded && (
+                <div className="border-t border-sapv-gray-dark bg-sapv-blue-dark">
+                    <ProjectDetailTabs project={project} />
+                </div>
+            )}
+        </div>
+    );
+};
+
 export const ProjectsTab: React.FC = () => {
     const { projects } = useSession();
     const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
@@ -88,57 +132,16 @@ export const ProjectsTab: React.FC = () => {
                         <PlusCircle className="inline-block mr-2" size={16} /> Adicionar Projeto
                     </Button>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="border-b border-sapv-gray-dark text-xs text-sapv-gray uppercase sticky top-0 bg-sapv-blue-light">
-                            <tr>
-                                <th className="p-4 w-8"></th>
-                                <th className="p-4">Num./Exercício</th>
-                                <th className="p-4">Tipo de Matéria</th>
-                                <th className="p-4">Data</th>
-                                <th className="p-4">Ementa</th>
-                                <th className="p-4">Propositor</th>
-                                <th className="p-4">Status</th>
-                                <th className="p-4">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paginatedProjects.map(p => (
-                                <React.Fragment key={p.id}>
-                                    <tr className="border-b border-sapv-gray-dark hover:bg-sapv-blue-dark/50 transition-colors">
-                                        <td className="p-4 align-top">
-                                            <button onClick={() => handleToggleExpand(p.id)} className="text-sapv-gray hover:text-sapv-highlight">
-                                                {expandedProjectId === p.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                                            </button>
-                                        </td>
-                                        <td className="p-4 font-semibold text-sapv-gray-light align-top">{p.number}</td>
-                                        <td className="p-4 align-top">{p.matterType}</td>
-                                        <td className="p-4 align-top">{p.date ? new Date(p.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '-'}</td>
-                                        <td className="p-4 align-top max-w-xs truncate">{p.description}</td>
-                                        <td className="p-4 align-top">{p.author.name}</td>
-                                        <td className="p-4 align-top">
-                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${getStatusBadgeStyle(p.workflowStatus)}`}>
-                                                {p.workflowStatus}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 align-top">
-                                            <div className="flex items-center gap-2">
-                                                <Button size="sm" variant="secondary" onClick={() => handleOpenModal(p)} className="!p-2"><Edit size={14}/></Button>
-                                                <Button size="sm" variant="secondary" className="!p-2"><FileText size={14}/></Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {expandedProjectId === p.id && (
-                                        <tr className="border-b border-sapv-gray-dark">
-                                            <td colSpan={8}>
-                                                <ProjectDetailTabs project={p} />
-                                            </td>
-                                        </tr>
-                                    )}
-                                </React.Fragment>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="space-y-4">
+                    {paginatedProjects.map(p => (
+                         <ProjectItem
+                            key={p.id}
+                            project={p}
+                            isExpanded={expandedProjectId === p.id}
+                            onToggleExpand={() => handleToggleExpand(p.id)}
+                            onEdit={() => handleOpenModal(p)}
+                        />
+                    ))}
                 </div>
                 {totalPages > 1 && (
                     <div className="flex justify-between items-center mt-4 pt-4 border-t border-sapv-gray-dark">
