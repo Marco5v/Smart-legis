@@ -1,99 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { User, Users, Play, FileText, Pause, Mic, Info, ThumbsUp, ThumbsDown, MinusCircle, Maximize, Minimize, Settings2 } from 'lucide-react';
+import { User, Users, Play, FileText, ThumbsUp, ThumbsDown, MinusCircle, Maximize, Minimize } from 'lucide-react';
+import { useSession } from '../context/SessionContext';
+import { PanelView, VoteOption, UserProfile, Project } from '../types';
+import SpeakerPanel from '../components/panel/SpeakerPanel';
+import MessagePanel from '../components/panel/MessagePanel';
 
-// --- 1. DEFINIÇÕES DE TIPOS E MOCKS (Ambiente Autônomo) ---
-
-enum UserRole { PRESIDENTE = 'Presidente', VEREADOR = 'Vereador' }
-enum VoteOption { SIM = 'Sim', NAO = 'Não', ABS = 'Abster-se' }
-enum SessionPhase { INICIAL = 'Inicial', EXPEDIENTE = 'Expediente', ORDEM_DO_DIA = 'Ordem do Dia' }
-enum PanelView { OFF = 'off', PRESENCE = 'presence', SPEAKER = 'speaker', VOTING = 'voting', MESSAGE = 'message', READING = 'reading' }
-
-interface UserProfile {
-  uid: string;
-  name: string;
-  party: string;
-  role: UserRole;
-  boardRole?: string;
-  photoUrl?: string;
-}
-
-interface Project {
-    id: string;
-    title: string;
-    description: string;
-    matterType: string;
-    author: { name: string };
-    votingRules: { majority: string };
-    turns?: string;
-}
-
-const DADOS_VEREADORES: UserProfile[] = [
-  { uid: '1', name: 'IRMÃO BETO', party: 'PP', role: UserRole.PRESIDENTE, boardRole: 'PRESIDENTE' },
-  { uid: '2', name: 'FRANCIS DE GINALDO', party: 'MDB', role: UserRole.VEREADOR, boardRole: 'VICE' },
-  { uid: '3', name: 'MANOEL DO POSTO', party: 'PP', role: UserRole.VEREADOR, boardRole: '1º SEC' },
-  { uid: '4', name: 'DEL DO MERCADINHO', party: 'PSDB', role: UserRole.VEREADOR, boardRole: '2º SEC' },
-  { uid: '5', name: 'DANIEL MIGUEL', party: 'PSDB', role: UserRole.VEREADOR },
-  { uid: '6', name: 'LÊDO', party: 'PSDB', role: UserRole.VEREADOR },
-  { uid: '7', name: 'SARGENTO VAL', party: 'MDB', role: UserRole.VEREADOR },
-  { uid: '8', name: 'JULIANA VIDAL', party: 'PP', role: UserRole.VEREADOR },
-  { uid: '9', name: 'JOÃO OLÍMPIO', party: 'PSB', role: UserRole.VEREADOR },
-  { uid: '10', name: 'JOÃO SUFOCO', party: 'UB', role: UserRole.VEREADOR },
-  { uid: '11', name: 'CHICO DO POVO', party: 'MDB', role: UserRole.VEREADOR },
-  { uid: '12', name: 'ADRIANO FERREIRA', party: 'PODE', role: UserRole.VEREADOR },
-];
-
-const PROJETO_EXEMPLO: Project = {
-    id: 'proj-1',
-    title: 'PROJETO DE LEI Nº 001/2024',
-    description: 'Dispõe sobre a obrigatoriedade da instalação de painéis solares em prédios públicos e dá outras providências, visando a sustentabilidade e economia de energia no município.',
-    matterType: 'PROJETO DE LEI',
-    author: { name: 'JOÃO OLÍMPIO' },
-    votingRules: { majority: 'Maioria Simples' },
-    turns: 'Turno Único'
-};
-
-// --- MOCK STATE MANAGER (Para simular o Controlador) ---
-// Em produção, isso seria substituído pelo Contexto real conectado ao Firebase
-const useSessionMock = () => {
-  const [state, setState] = useState({
-      status: 'active',
-      phase: SessionPhase.ORDEM_DO_DIA,
-      presence: DADOS_VEREADORES.reduce((acc, v) => ({ ...acc, [v.uid]: true }), {} as Record<string, boolean>),
-      panelView: PanelView.VOTING,
-      panelMessage: null as string | null,
-      votingOpen: false,
-      votes: {} as Record<string, VoteOption>,
-      currentProject: PROJETO_EXEMPLO,
-      currentSpeaker: { uid: '7', name: 'SARGENTO VAL', party: 'MDB', photoUrl: '', role: UserRole.VEREADOR },
-      speakerTimerEndTime: Date.now() + 180000,
-      speakerTimerPaused: false,
-      legislatureMembers: DADOS_VEREADORES.map(v => v.uid),
-  });
-
-  // Funções de Simulação (Controlador)
-  const actions = {
-      toggleVoting: () => setState(s => ({ ...s, votingOpen: !s.votingOpen, votes: s.votingOpen ? {} : s.votes, panelView: !s.votingOpen ? PanelView.VOTING : PanelView.PRESENCE })),
-      setPanelView: (view: PanelView) => setState(s => ({ ...s, panelView: view })),
-      castRandomVotes: () => {
-          const newVotes: Record<string, VoteOption> = {};
-          DADOS_VEREADORES.forEach(v => {
-              if (Math.random() > 0.3) newVotes[v.uid] = Math.random() > 0.5 ? VoteOption.SIM : VoteOption.NAO;
-          });
-          setState(s => ({ ...s, votes: newVotes }));
-      },
-      resetSession: () => setState(s => ({ ...s, votingOpen: false, votes: {}, panelView: PanelView.PRESENCE }))
-  };
-
-  return { session: state, councilMembers: DADOS_VEREADORES, actions };
-};
+// --- COMPONENTES INTERNOS DO PAINEL ---
 
 const Clock = ({ className = "" }) => {
   const [time, setTime] = useState(new Date());
   useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
   return <span className={className}>{time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>;
 };
-
-// --- 2. COMPONENTES INTERNOS DO PAINEL ---
 
 // Card do Vereador (Novo Design Limpo)
 const CardVereador = ({ member, session }: { member: UserProfile, session: any }) => {
@@ -107,7 +25,6 @@ const CardVereador = ({ member, session }: { member: UserProfile, session: any }
   let iconeBg = "bg-gray-800 border-gray-700 text-gray-500";
   let corNome = "text-white";
   let cardBg = "bg-gradient-to-br from-gray-800/80 to-gray-900/90 backdrop-blur-xl";
-  let statusIndicator = null;
 
   // Lógica de Exibição
   let IconArea = (
@@ -203,6 +120,7 @@ const ResumoVotacao = ({ session, members }: { session: any, members: any[] }) =
   const nao = Object.values(votes).filter(v => v === VoteOption.NAO).length;
   const abs = Object.values(votes).filter(v => v === VoteOption.ABS).length;
 
+  // Se não estiver em votação, mostra apenas o quórum
   if (!session.votingOpen && session.panelView !== PanelView.VOTING) {
       return ( 
         <div className="bg-gray-800/60 backdrop-blur-xl border border-gray-600 px-12 py-3 rounded-full flex items-center gap-6 mx-auto shadow-2xl"> 
@@ -212,6 +130,7 @@ const ResumoVotacao = ({ session, members }: { session: any, members: any[] }) =
       );
   }
 
+  // Durante a votação ou exibição de resultado
   return (
     <div className="grid grid-cols-4 gap-px bg-gray-700/40 rounded-2xl border border-gray-600 shadow-2xl w-full max-w-5xl mx-auto overflow-hidden backdrop-blur-2xl">
       <div className="flex flex-col items-center justify-center p-3 bg-gray-900/80"> 
@@ -236,7 +155,7 @@ const ResumoVotacao = ({ session, members }: { session: any, members: any[] }) =
 
 // Componente de Leitura (Substitui o Grid)
 const ProjectDisplay = ({ project }: { project: Project }) => (
-    <div className="flex-1 flex flex-col justify-center items-center bg-gray-900/40 backdrop-blur-md rounded-3xl border border-white/10 p-12 shadow-2xl m-4 relative overflow-hidden">
+    <div className="flex-1 flex flex-col justify-center items-center bg-gray-900/40 backdrop-blur-md rounded-3xl border border-white/10 p-12 shadow-2xl m-4 relative overflow-hidden animate-in fade-in zoom-in duration-500">
          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none"></div>
          <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none"></div>
 
@@ -244,7 +163,7 @@ const ProjectDisplay = ({ project }: { project: Project }) => (
             <div className="inline-block px-6 py-2 bg-blue-500/20 rounded-full border border-blue-500/30 text-blue-300 font-bold tracking-widest uppercase mb-4">
                 Em Discussão
             </div>
-            <h1 className="text-6xl md:text-7xl font-black text-white leading-tight drop-shadow-xl">
+            <h1 className="text-6xl md:text-7xl font-black text-white leading-tight drop-shadow-xl uppercase">
                 {project.title}
             </h1>
             <p className="text-3xl text-gray-300 leading-relaxed font-light max-w-4xl mx-auto border-l-4 border-yellow-500 pl-8 text-left">
@@ -268,11 +187,10 @@ const ProjectDisplay = ({ project }: { project: Project }) => (
     </div>
 );
 
-// --- 3. PÁGINA PRINCIPAL ---
+// --- PÁGINA PRINCIPAL ---
 
 const PanelPage: React.FC = () => {
-    // Usando o Mock para simular funcionalidades
-    const { session, councilMembers, actions } = useSessionMock();
+    const { session, councilMembers } = useSession();
     const [hora, setHora] = useState(new Date());
     const [isFullscreen, setIsFullscreen] = useState(false);
     
@@ -288,20 +206,34 @@ const PanelPage: React.FC = () => {
         else if (document.exitFullscreen) document.exitFullscreen();
     };
 
-    const activeMembers = councilMembers; 
-
     // Conteúdo Central Dinâmico
     let MainContent;
     if (session.panelView === PanelView.READING && session.currentProject) {
         MainContent = <ProjectDisplay project={session.currentProject} />;
+    } else if (session.panelView === PanelView.SPEAKER) {
+        MainContent = (
+            <div className="flex-1 flex items-center justify-center p-8">
+                <SpeakerPanel 
+                    currentSpeaker={session.currentSpeaker} 
+                    speakerTimerEndTime={session.speakerTimerEndTime} 
+                    speakerTimerPaused={session.speakerTimerPaused} 
+                />
+            </div>
+        );
+    } else if (session.panelView === PanelView.MESSAGE) {
+        MainContent = (
+            <div className="flex-1 flex items-center justify-center">
+                 <MessagePanel message={session.panelMessage} />
+            </div>
+        );
     } else if (session.panelView === PanelView.OFF) {
-        MainContent = <div className="flex-1 flex items-center justify-center text-4xl text-gray-500">Sessão em Espera</div>;
+        MainContent = <div className="flex-1 flex items-center justify-center text-5xl text-gray-600 font-thin tracking-widest uppercase">Sessão em Espera</div>;
     } else {
-        // Grid de Votação/Presença (Padrão)
+        // Grid de Votação/Presença (Padrão para PRESENCE e VOTING)
         MainContent = (
             <div className="flex-1 min-h-0 overflow-hidden pb-4 relative z-0 flex flex-col">
                  <div className="grid grid-cols-3 lg:grid-cols-4 gap-6 h-full content-start p-6 overflow-y-auto">
-                    {activeMembers.map(ver => ( 
+                    {councilMembers.map(ver => ( 
                         <CardVereador key={ver.uid} member={ver} session={session} /> 
                     ))}
                  </div>
@@ -320,7 +252,7 @@ const PanelPage: React.FC = () => {
                     </div>
                     <div> 
                         <h1 className="text-3xl font-bold tracking-widest text-white drop-shadow-md">CÂMARA MUNICIPAL</h1> 
-                        <p className="text-blue-300/80 text-sm font-bold uppercase tracking-[0.3em] ml-0.5">Poder Legislativo</p> 
+                        <p className="text-blue-300/80 text-sm font-bold uppercase tracking-[0.3em] ml-0.5">{session.cityName || 'Poder Legislativo'}</p> 
                     </div>
                   </div>
                   <div className="text-right">
@@ -344,36 +276,12 @@ const PanelPage: React.FC = () => {
              {/* Conteúdo Principal (Grid ou Leitura) */}
              {MainContent}
 
-             {/* Rodapé com Totais (Apenas se não estiver em leitura tela cheia) */}
-             {session.panelView !== PanelView.READING && (
+             {/* Rodapé com Totais (Apenas se não estiver em leitura tela cheia ou message) */}
+             {session.panelView !== PanelView.READING && session.panelView !== PanelView.MESSAGE && session.panelView !== PanelView.SPEAKER && (
                  <div className="flex-shrink-0 mt-2">
-                    <ResumoVotacao session={session} members={activeMembers} />
+                    <ResumoVotacao session={session} members={councilMembers} />
                  </div>
              )}
-
-            {/* --- CONTROLES DE SIMULAÇÃO (VISÍVEIS APENAS NO HOVER DO CANTO INFERIOR ESQUERDO) --- */}
-            {/* Útil para você testar os botões do controlador sem ter o backend conectado */}
-            <div className="fixed bottom-6 left-6 group z-50">
-                <div className="p-3 bg-gray-800/50 text-white/30 rounded-full border border-white/5 group-hover:hidden transition-all">
-                    <Settings2 size={24} />
-                </div>
-                <div className="hidden group-hover:flex flex-col gap-2 bg-gray-800/90 backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-2xl w-64">
-                    <p className="text-xs font-bold text-gray-400 uppercase mb-2">Simulador de Mesa</p>
-                    <button onClick={actions.toggleVoting} className={`px-3 py-2 rounded font-bold text-sm ${session.votingOpen ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
-                        {session.votingOpen ? 'Fechar Votação' : 'Abrir Votação'}
-                    </button>
-                    <button onClick={actions.castRandomVotes} className="px-3 py-2 bg-blue-600 text-white rounded font-bold text-sm hover:bg-blue-700">
-                        Computar Votos (Teste)
-                    </button>
-                    <div className="h-px bg-white/10 my-1"></div>
-                    <button onClick={() => actions.setPanelView(PanelView.READING)} className="px-3 py-2 bg-gray-700 text-white rounded font-bold text-sm hover:bg-gray-600 text-left flex items-center gap-2">
-                        <FileText size={14}/> Espelhar Projeto
-                    </button>
-                    <button onClick={() => actions.setPanelView(PanelView.VOTING)} className="px-3 py-2 bg-gray-700 text-white rounded font-bold text-sm hover:bg-gray-600 text-left flex items-center gap-2">
-                        <Users size={14}/> Voltar p/ Grid
-                    </button>
-                </div>
-            </div>
 
             {/* Botão de Tela Cheia Global */}
             <button 
