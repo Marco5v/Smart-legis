@@ -27,7 +27,15 @@ const PanelPage: React.FC = () => {
       case PanelView.VOTING:
         return <motion.div key="voting" variants={panelVariants} initial="initial" animate="animate" exit="exit"><VotingPanel /></motion.div>;
       case PanelView.SPEAKER:
-        return <motion.div key="speaker" variants={panelVariants} initial="initial" animate="animate" exit="exit"><SpeakerPanel currentSpeaker={session.currentSpeaker} speakerTimerEndTime={session.speakerTimerEndTime} speakerTimerPaused={session.speakerTimerPaused} /></motion.div>;
+        return (
+          <motion.div key="speaker" variants={panelVariants} initial="initial" animate="animate" exit="exit">
+            <SpeakerPanel 
+              currentSpeaker={session.currentSpeaker} 
+              speakerTimerEndTime={session.speakerTimerEndTime} 
+              speakerTimerPaused={session.speakerTimerPaused} 
+            />
+          </motion.div>
+        );
       case PanelView.READING:
         return <motion.div key="reading" variants={panelVariants} initial="initial" animate="animate" exit="exit"><ReadingPanel project={session.currentProject} /></motion.div>;
       case PanelView.MESSAGE:

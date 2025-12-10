@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSession } from '../../context/SessionContext';
 import { UserProfile, VoteOption, PanelView, SessionPhase } from '../../types';
