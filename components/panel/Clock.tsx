@@ -15,7 +15,7 @@ const Clock: React.FC<ClockProps> = ({ className = '' }) => {
 
   return (
     <div className={`font-mono text-center ${className}`}>
-      {time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+      {time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
     </div>
   );
 };

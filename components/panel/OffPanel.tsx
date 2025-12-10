@@ -1,33 +1,21 @@
 
 import React from 'react';
-import Clock from './Clock';
 import { Users } from 'lucide-react';
-import { useSession } from '../../context/SessionContext';
+import Clock from './Clock';
 
 const OffPanel: React.FC = () => {
-    const { session } = useSession();
-    return (
-        <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white font-sans flex flex-col items-center justify-center p-8 text-center">
-            <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-blue-900/40 rounded-lg border border-blue-800/30">
-                    <Users size={48} className="text-white" />
-                </div>
-                <div>
-                    <h1 className="text-5xl font-bold tracking-widest text-white">CÂMARA MUNICIPAL</h1>
-                    <p className="text-gray-400 text-lg uppercase tracking-[0.2em] mt-1">{session.cityName || 'Poder Legislativo'}</p>
-                </div>
-            </div>
-            
-            <div className="my-12">
-                <Clock className="text-8xl font-bold tracking-tighter" />
-            </div>
-
-            <div className="bg-black/50 rounded-lg px-8 py-4 border-t-2 border-blue-600">
-                <p className="text-2xl text-gray-400 font-bold uppercase tracking-widest">SESSÃO PLENÁRIA</p>
-                <p className="text-lg text-yellow-400 mt-2 animate-pulse">Aguardando Início</p>
-            </div>
-        </div>
-    );
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center text-white p-8 bg-gradient-to-b from-gray-900 to-black">
+      <div className="mb-12 p-8 bg-blue-600/10 rounded-full border-4 border-blue-500/30 shadow-[0_0_50px_rgba(37,99,235,0.2)] animate-pulse">
+          <Users size={140} className="text-blue-400" />
+      </div>
+      <h1 className="text-8xl font-black text-white font-sans tracking-tight mb-6 drop-shadow-2xl">SMART LEGIS</h1>
+      <h2 className="text-4xl text-gray-400 mb-16 uppercase tracking-[0.2em] font-light">Sistema de Apoio Legislativo</h2>
+      <div className="text-9xl font-bold font-mono text-white drop-shadow-lg tabular-nums">
+        <Clock className="tracking-tighter"/>
+      </div>
+    </div>
+  );
 };
 
 export default OffPanel;

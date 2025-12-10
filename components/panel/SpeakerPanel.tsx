@@ -1,68 +1,82 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../../types';
-import { Mic } from 'lucide-react';
-import PresencePanel from './PresencePanel';
+import { User } from 'lucide-react';
+import { useSession } from '../../context/SessionContext';
 
 interface SpeakerPanelProps {
-    currentSpeaker: UserProfile | null;
+    currentSpeaker: UserProfile;
     speakerTimerEndTime: number | null;
 }
 
-const formatTime = (seconds: number): string => {
-    if (seconds < 0) return '00:00';
-    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const secs = (seconds % 60).toString().padStart(2, '0');
-    return `${mins}:${secs}`;
-};
-
 const SpeakerPanel: React.FC<SpeakerPanelProps> = ({ currentSpeaker, speakerTimerEndTime }) => {
-    const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
-
-    useEffect(() => {
-        if (!speakerTimerEndTime) {
-            setRemainingSeconds(0);
-            return;
-        }
-
-        const interval = setInterval(() => {
-            const now = Date.now();
-            const diff = speakerTimerEndTime - now;
-            setRemainingSeconds(Math.floor(diff / 1000));
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [speakerTimerEndTime]);
-
-    if (!currentSpeaker) {
-        return <PresencePanel />;
+  const { session } = useSession();
+  const { speakerTimerPaused } = session;
+  const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  
+  useEffect(() => {
+    if (!speakerTimerEndTime) {
+        setRemainingTime(null);
+        return;
     }
 
-    const timeColor = remainingSeconds <= 30 ? 'text-red-500 animate-pulse' : 'text-sapv-highlight';
+    const calculate = () => {
+        const now = Date.now();
+        const diff = speakerTimerEndTime - now;
+        setRemainingTime(Math.max(0, Math.floor(diff / 1000)));
+    };
 
-    return (
-        <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white font-sans flex flex-col items-center justify-center p-8 text-center">
-            <div className="bg-gray-800/50 backdrop-blur-md p-12 rounded-xl border border-green-500 shadow-2xl max-w-4xl w-full">
-                <div className="flex items-center justify-center gap-4 mb-6">
-                    <Mic size={40} className="text-green-400"/>
-                    <h2 className="text-3xl font-bold uppercase tracking-widest text-green-400">Orador na Tribuna</h2>
-                </div>
-                <div className="flex items-center justify-center gap-6 my-8">
-                    <img src={currentSpeaker.photoUrl} alt={currentSpeaker.name} className="w-48 h-48 rounded-full border-4 border-white shadow-lg"/>
-                    <div>
-                        <h1 className="text-6xl font-bold text-white mb-2">{currentSpeaker.name}</h1>
-                        <p className="text-3xl text-gray-400">{currentSpeaker.party}</p>
-                    </div>
-                </div>
+    if (!speakerTimerPaused) {
+        calculate(); 
+        const interval = setInterval(calculate, 1000);
+        return () => clearInterval(interval);
+    } else {
+        calculate();
+    }
+  }, [speakerTimerEndTime, speakerTimerPaused]);
 
-                {speakerTimerEndTime && (
-                    <div className={`font-mono text-9xl font-bold my-4 ${timeColor}`}>
-                        {formatTime(remainingSeconds)}
-                    </div>
-                )}
-            </div>
+  const formatTime = (seconds: number | null): string => { 
+      if (seconds === null) return '00:00'; 
+      const mins = Math.floor(seconds / 60).toString().padStart(2, '0'); 
+      const secs = (seconds % 60).toString().padStart(2, '0'); 
+      return `${mins}:${secs}`; 
+  };
+
+  const isCriticalTime = remainingTime !== null && remainingTime < 30;
+
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center text-white p-8 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-800 via-gray-900 to-black">
+      <div className="bg-blue-600 text-white px-12 py-3 rounded-full font-black tracking-[0.3em] mb-16 uppercase text-2xl shadow-[0_0_40px_rgba(37,99,235,0.4)] border border-blue-400/30">
+          Tribuna Livre
+      </div>
+      <div className="flex flex-col items-center mb-16 relative z-10">
+        <div className="w-80 h-80 rounded-full bg-gray-800 border-[6px] border-gray-700 mb-10 flex items-center justify-center shadow-2xl shadow-black overflow-hidden relative">
+            {currentSpeaker.photoUrl ? (
+                <img src={currentSpeaker.photoUrl} alt={currentSpeaker.name} className="w-full h-full object-cover" />
+            ) : (
+                <User size={160} className="text-gray-600" />
+            )}
+            <div className="absolute inset-0 border-4 border-blue-500/30 rounded-full animate-ping opacity-20"></div>
         </div>
-    );
+        <h1 className="text-8xl font-black tracking-tight text-white mb-6 text-center drop-shadow-2xl">{currentSpeaker.name}</h1>
+        <div className="bg-white/10 backdrop-blur-md px-10 py-4 rounded-2xl border border-white/10">
+             <p className="text-5xl font-bold text-blue-400">{currentSpeaker.party}</p>
+        </div>
+      </div>
+      <div className="relative group">
+        <div className={`font-mono text-[14rem] leading-none font-bold tabular-nums tracking-tighter drop-shadow-2xl transition-all duration-500 ${isCriticalTime ? 'text-red-500 scale-110' : 'text-white'} ${speakerTimerPaused ? 'opacity-50' : 'opacity-100'}`}>
+            {formatTime(remainingTime)}
+        </div>
+        {speakerTimerPaused && (
+            <div className="absolute inset-0 flex items-center justify-center">
+                <span className="bg-yellow-500 text-black text-2xl font-bold px-4 py-1 rounded uppercase tracking-widest">Pausado</span>
+            </div>
+        )}
+      </div>
+      {isCriticalTime && !speakerTimerPaused && (
+          <p className="mt-8 text-red-500 font-black text-4xl animate-bounce uppercase tracking-[0.5em]">Tempo Esgotando</p>
+      )}
+    </div>
+  );
 };
-
 export default SpeakerPanel;

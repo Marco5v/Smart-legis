@@ -1,25 +1,18 @@
 
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
-import PresencePanel from './PresencePanel';
+import { Info } from 'lucide-react';
 
 interface MessagePanelProps {
-    message: string | null;
+    message: string;
 }
 
 const MessagePanel: React.FC<MessagePanelProps> = ({ message }) => {
-    if (!message) {
-        return <PresencePanel />;
-    }
-
     return (
-        <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white font-sans flex flex-col items-center justify-center p-8 text-center">
-            <div className="bg-gray-800/50 backdrop-blur-md p-12 rounded-xl border border-yellow-500 shadow-2xl max-w-4xl w-full">
-                 <div className="flex items-center justify-center gap-4 mb-6">
-                    <AlertTriangle size={40} className="text-yellow-400"/>
-                    <h2 className="text-3xl font-bold uppercase tracking-widest text-yellow-400">Aviso da Mesa Diretora</h2>
-                </div>
-                <p className="text-5xl font-bold text-white leading-tight">{message}</p>
+        <div className="w-full h-full flex flex-col items-center justify-center text-white p-12 bg-yellow-900/95 backdrop-blur-sm">
+            <div className="bg-black/30 p-12 rounded-3xl border border-yellow-500/30 shadow-2xl max-w-5xl w-full text-center">
+                <Info size={80} className="mx-auto text-yellow-400 mb-6" />
+                <h1 className="text-6xl font-black tracking-wider text-yellow-400 mb-10 uppercase">Comunicado</h1>
+                <p className="text-5xl text-white font-bold leading-relaxed">{message}</p>
             </div>
         </div>
     );
