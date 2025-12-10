@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { User, Users, Play, FileText, Pause, Mic, Clock as ClockIcon, Info } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { User, Users, Play, FileText, Pause, Mic, Clock as ClockIcon, Info, ThumbsUp, ThumbsDown, MinusCircle } from 'lucide-react';
 
 // --- 1. DEFINIÇÕES DE TIPOS E MOCKS (Ambiente Autônomo) ---
 
@@ -242,7 +242,12 @@ const SpeakerPanel = ({ currentSpeaker, speakerTimerEndTime, speakerTimerPaused 
 
 // --- 3. COMPONENTES DO GRID (VISÃO PADRÃO) ---
 
-const CardVereador = ({ member, session }: { member: UserProfile, session: any }) => {
+interface CardVereadorProps {
+  member: UserProfile;
+  session: any;
+}
+// FIX: Changed component definition to use React.FC to fix typing issue with 'key' prop.
+const CardVereador: React.FC<CardVereadorProps> = ({ member, session }) => {
   const isPresent = session.presence[member.uid];
   const vote = session.votes[member.uid];
   const isVoting = session.votingOpen || session.panelView === PanelView.VOTING;
@@ -259,6 +264,17 @@ const CardVereador = ({ member, session }: { member: UserProfile, session: any }
   let corNome = "text-white";
   let cardBg = "bg-gradient-to-br from-gray-800/60 to-gray-900/95 backdrop-blur-xl";
 
+  // Determinar o conteúdo da área do ícone (Avatar vs Voto)
+  let IconArea = (
+      <>
+        {member.photoUrl && member.photoUrl.startsWith('http') ? (
+            <img src={member.photoUrl} alt="" className={`w-full h-full object-cover ${!isPresent ? 'grayscale opacity-50' : ''}`} />
+        ) : (
+            <User size={32} strokeWidth={1.5} />
+        )}
+      </>
+  );
+
   if (isPresent) {
     corNome = "text-green-400";
     iconeBg = "bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 text-gray-300 shadow-inner";
@@ -267,21 +283,36 @@ const CardVereador = ({ member, session }: { member: UserProfile, session: any }
          if (vote === VoteOption.SIM) {
             corBorda = "border-green-500"; 
             bgStatus = "bg-green-600"; 
-            textoStatus = "SIM"; 
+            textoStatus = "\u00A0"; // Remove texto
             corTextoStatus = "text-white"; 
             sombra = "shadow-[0_0_25px_rgba(34,197,94,0.4)] scale-[1.02] z-10";
+            
+            // Ícone de Voto (Like Verde)
+            iconeBg = "bg-green-600 border-green-500 text-white";
+            IconArea = <ThumbsUp size={32} strokeWidth={2.5} />;
+
          } else if (vote === VoteOption.NAO) {
             corBorda = "border-red-500"; 
             bgStatus = "bg-red-600"; 
-            textoStatus = "NÃO"; 
+            textoStatus = "\u00A0"; // Remove texto
             corTextoStatus = "text-white"; 
             sombra = "shadow-[0_0_25px_rgba(239,68,68,0.4)] scale-[1.02] z-10";
+
+            // Ícone de Voto (Dislike Vermelho)
+            iconeBg = "bg-red-600 border-red-500 text-white";
+            IconArea = <ThumbsDown size={32} strokeWidth={2.5} />;
+
          } else if (vote === VoteOption.ABS) {
             corBorda = "border-yellow-500"; 
             bgStatus = "bg-yellow-500"; 
-            textoStatus = "ABSTENÇÃO"; 
+            textoStatus = "\u00A0"; // Remove texto
             corTextoStatus = "text-black"; 
             sombra = "shadow-[0_0_25px_rgba(234,179,8,0.4)] scale-[1.02] z-10";
+
+            // Ícone de Voto (Abstenção Amarelo)
+            iconeBg = "bg-yellow-500 border-yellow-400 text-black";
+            IconArea = <MinusCircle size={32} strokeWidth={2.5} />;
+            
          } else {
             corBorda = "border-blue-500/50"; 
             bgStatus = "bg-gray-800"; 
@@ -319,36 +350,31 @@ const CardVereador = ({ member, session }: { member: UserProfile, session: any }
       {/* Área Principal */}
       <div className="flex-1 flex items-center px-5 gap-5 min-h-0 py-2 relative z-10">
         
-        {/* Foto / Ícone */}
-        <div className={`w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center border ${iconeBg} overflow-hidden`}>
-          {member.photoUrl && member.photoUrl.startsWith('http') ? (
-              <img src={member.photoUrl} alt="" className={`w-full h-full object-cover ${!isPresent ? 'grayscale opacity-50' : ''}`} />
-          ) : (
-              <User size={32} strokeWidth={1.5} />
-          )}
+        {/* Foto / Ícone (Vira Voto quando votado) */}
+        <div className={`w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center border ${iconeBg} overflow-hidden transition-colors duration-300`}>
+          {IconArea}
         </div>
 
         {/* Bloco de Texto - Centralizado Verticalmente */}
         <div className="flex-1 min-w-0 h-full flex flex-col justify-center items-start text-left">
             
-            {/* Cargo - Slot reservado para manter altura constante e alinhamento na grade */}
+            {/* Cargo */}
             <div className="mb-0.5 min-h-[16px] flex items-end w-full justify-start">
                 {member.boardRole ? (
                     <span className="text-[10px] md:text-[11px] text-yellow-400 font-black uppercase tracking-wider leading-none drop-shadow-md">
                         {member.boardRole.toUpperCase()}
                     </span>
                 ) : ( 
-                    // Ponto invisível para reservar o espaço exato
                     <span className="text-[10px] md:text-[11px] opacity-0 select-none leading-none">.</span> 
                 )}
             </div>
 
-            {/* Nome - Com destaque e sombra leve */}
+            {/* Nome */}
             <div className={`text-sm md:text-[1.05rem] font-bold uppercase tracking-wide leading-tight text-left break-words w-full ${corNome} drop-shadow-sm`}>
                 {member.name}
             </div>
 
-            {/* Partido - Badge estilizada */}
+            {/* Partido */}
             <div className="mt-1 flex w-full justify-start">
                 <span className={`text-[10px] font-bold inline-block px-2 py-0.5 rounded border ${isPresent ? 'bg-gray-800/80 border-gray-600 text-blue-200' : 'bg-gray-900 border-gray-800 text-gray-700'}`}>
                     {member.party}
