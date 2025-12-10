@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSession } from '../../context/SessionContext';
 import { UserProfile, VoteOption, PanelView } from '../../types';
@@ -66,10 +65,12 @@ const CardVereador: React.FC<{ member: UserProfile, session: any }> = ({ member,
         </div>
         <div className="flex-1 min-w-0 flex flex-col justify-center items-start text-left">
             <div className="mb-1 min-h-[16px] flex items-end w-full justify-start">
-                {member.boardRole && (
+                {member.boardRole ? (
                     <span className="text-[11px] md:text-[12px] text-yellow-400 font-black uppercase tracking-wider leading-none drop-shadow-md">
-                        {member.boardRole}
+                        {member.boardRole.toUpperCase()}
                     </span>
+                ) : (
+                    <span className="text-[11px] opacity-0 select-none leading-none">.</span>
                 )}
             </div>
             <div className={`text-base md:text-[1.25rem] font-bold uppercase tracking-wide leading-tight text-left break-words w-full ${corNome} drop-shadow-sm`}>
@@ -142,7 +143,7 @@ const VotingPanel: React.FC = () => {
              </header>
 
              {session.currentProject && (
-                <div className="mb-6 flex gap-6 h-36 shrink-0">
+                <div className="mb-6 flex gap-6 h-36 shrink-0 animate-in fade-in slide-in-from-top-4 duration-500">
                     <div className="flex-1 bg-gray-800/40 backdrop-blur-xl px-8 py-5 rounded-2xl border-l-8 border-blue-500 flex flex-col justify-center shadow-2xl ring-1 ring-white/5">
                         <div className="flex items-center justify-between mb-2"> 
                             <h3 className="text-blue-400 font-bold uppercase tracking-wider text-xs">Em Votação</h3> 
